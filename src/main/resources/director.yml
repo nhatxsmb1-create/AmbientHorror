@@ -1,0 +1,41 @@
+biome-weights:
+  DEEP_DARK: 35
+  SWAMP: 25
+  MANGROVE_SWAMP: 22
+  DARK_FOREST: 28
+  SOUL_SAND_VALLEY: 30
+  WARPED_FOREST: 20
+  CRIMSON_FOREST: 18
+  NETHER_WASTES: 15
+  MUSHROOM_FIELDS: 10
+  FROZEN_OCEAN: 12
+  DEEP_OCEAN: 14
+  DEFAULT: 5
+
+weather-weights:
+  CLEAR: 0
+  RAIN: 12
+  THUNDER: 20
+
+time-weights:
+  early-night:
+    min: 13000
+    max: 16000
+    score: 10
+  deep-night:
+    min: 16000
+    max: 20000
+    score: 25
+  late-night:
+    min: 20000
+    max: 23000
+    score: 15
+
+nearby-player-weights:
+  alone: 20
+  one: 10
+  two: 5
+  many: 0
+
+presence-bonus-per-level: 0.3
+max-score: 100
