@@ -2,7 +2,7 @@ sounds:
 
   footstep_behind:
     sound: "ambienthorror.footstep.gravel"
-    fallback: "minecraft:block.gravel.step"
+    fallback: "minecraft:entity.ender_dragon.growl"
     volume: 0.4
     pitch: 0.9
     category: AMBIENT
