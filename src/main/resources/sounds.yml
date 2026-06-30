@@ -1,73 +1,82 @@
 sounds:
 
+  # Bước chân sau lưng — volume vừa phải, pitch lệch nhẹ để không nghe như loop máy móc
   footstep_behind:
     sound: "ambienthorror:footstep.gravel"
     fallback: "minecraft:block.gravel.step"
-    volume: 2.0
-    pitch: 1.0
-    category: AMBIENT
+    volume: 2.5
+    pitch: 0.95
+    category: MASTER
     offset-behind: 3.0
 
+  # Gió nền — giữ NHỎ, đây là lớp ambient liên tục, to quá sẽ gây mệt tai và mất tác dụng tương phản
   wind_whistle:
     sound: "ambienthorror:ambient.wind"
     fallback: "minecraft:ambient.cave"
-    volume: 2.0
-    pitch: 1.0
+    volume: 1.0
+    pitch: 0.9
     category: AMBIENT
 
+  # Cửa kẽo kẹt từ xa — vừa đủ rõ, pitch thấp hơn bình thường nghe "nặng nề" hơn
   distant_door:
     sound: "ambienthorror:door.creak"
     fallback: "minecraft:block.wooden_door.open"
     volume: 2.0
-    pitch: 1.0
-    category: AMBIENT
+    pitch: 0.85
+    category: MASTER
     min-distance: 10
     max-distance: 20
 
+  # Va kim loại — bất ngờ, to, pitch hơi cao tạo cảm giác chói gắt giật mình
   metal_hit:
     sound: "ambienthorror:metal.hit"
     fallback: "minecraft:block.anvil.land"
-    volume: 2.0
-    pitch: 1.0
-    category: AMBIENT
+    volume: 3.0
+    pitch: 1.1
+    category: MASTER
     min-distance: 8
     max-distance: 15
 
+  # Cây gãy — vừa phải, không cần quá to vì nó chỉ là tín hiệu môi trường
   tree_crack:
     sound: "ambienthorror:tree.crack"
     fallback: "minecraft:block.wood.break"
-    volume: 2.0
-    pitch: 1.0
+    volume: 1.8
+    pitch: 0.9
     category: AMBIENT
     min-distance: 5
     max-distance: 12
 
+  # Thì thầm sát tai — TO nhưng pitch cao bất thường, đây là âm thanh "private" nên có thể đẩy volume mạnh
   whisper:
     sound: "ambienthorror:whisper.close"
     fallback: "minecraft:entity.bat.ambient"
-    volume: 2.0
-    pitch: 1.0
-    category: VOICE
+    volume: 3.5
+    pitch: 1.2
+    category: MASTER
     private: true
 
+  # Hơi thở sát gáy — to, pitch thấp, nghe "nặng" và gần — kỹ thuật kinh điển của horror game
   breathing_close:
     sound: "ambienthorror:breathe.close"
     fallback: "minecraft:entity.player.breath"
-    volume: 2.0
-    pitch: 1.0
-    category: VOICE
+    volume: 3.0
+    pitch: 0.8
+    category: MASTER
     private: true
 
+  # Tiếng static/nhiễu bóng — giữ nhỏ, mang tính rình rập nền chứ không phải điểm nhấn
   shadow_flicker:
     sound: "ambienthorror:shadow.static"
     fallback: "minecraft:block.note_block.bass"
-    volume: 2.0
+    volume: 1.2
     pitch: 1.0
     category: AMBIENT
 
+  # The Man xuất hiện — TO NHẤT trong toàn bộ pack, đây là jumpscare chính, dùng MASTER để không bị slider phụ che
   the_man_appear:
     sound: "ambienthorror:theman.appear"
     fallback: "minecraft:entity.warden.nearby_closer"
-    volume: 2.0
-    pitch: 1.0
-    category: HOSTILE
+    volume: 4.0
+    pitch: 0.75
+    category: MASTER
