@@ -1,0 +1,73 @@
+events:
+
+  FOOTSTEP_BEHIND:
+    enabled: true
+    min-presence: 0
+    min-score: 15
+    weight: 40
+    cooldown-seconds: 60
+    sound-key: footstep_behind
+
+  WIND_WHISTLE:
+    enabled: true
+    min-presence: 0
+    min-score: 10
+    weight: 35
+    cooldown-seconds: 50
+    sound-key: wind_whistle
+
+  DISTANT_DOOR:
+    enabled: true
+    min-presence: 5
+    min-score: 18
+    weight: 20
+    cooldown-seconds: 90
+    sound-key: distant_door
+
+  METAL_HIT:
+    enabled: true
+    min-presence: 20
+    min-score: 25
+    weight: 25
+    cooldown-seconds: 70
+    sound-key: metal_hit
+
+  TREE_CRACK:
+    enabled: true
+    min-presence: 20
+    min-score: 22
+    weight: 20
+    cooldown-seconds: 80
+    sound-key: tree_crack
+
+  WHISPER:
+    enabled: true
+    min-presence: 40
+    min-score: 35
+    weight: 15
+    cooldown-seconds: 120
+    sound-key: whisper
+
+  BREATHING_CLOSE:
+    enabled: true
+    min-presence: 40
+    min-score: 40
+    weight: 12
+    cooldown-seconds: 150
+    sound-key: breathing_close
+
+  SHADOW_FLICKER:
+    enabled: false
+    min-presence: 60
+    min-score: 55
+    weight: 8
+    cooldown-seconds: 180
+    sound-key: shadow_flicker
+
+  THE_MAN_APPEAR:
+    enabled: false
+    min-presence: 80
+    min-score: 75
+    weight: 3
+    cooldown-seconds: 300
+    sound-key: the_man_appear
