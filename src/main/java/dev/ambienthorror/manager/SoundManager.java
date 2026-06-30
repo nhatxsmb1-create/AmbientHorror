@@ -32,6 +32,21 @@ public class SoundManager {
         float volume       = (float) sec.getDouble("volume", 0.5);
         float pitch        = (float) sec.getDouble("pitch", 1.0);
         boolean isPrivate  = sec.getBoolean("private", false);
+        boolean hasBehind  = sec.contains("offset-behind");
+        boolean hasDistance= sec.contains("min-distance");
+
+        Location soundLoc;
+
+        if (hasBehind) {
+            double offset = sec.getDouble("offset-behind", 3.0);
+            soundLoc = getBehindLocation(player, offset);
+        } else if (hasDistance) {
+            int minDist = sec.getInt("min-distance", 8);
+            int maxDist = sec.getInt("max-distance", 15);
+            soundLoc = getRandomNearbyLocation(player, minDist, maxDist);
+        } else {
+            soundLoc = player.getLocation();
+        }
 
         SoundCategory category;
         try {
@@ -40,24 +55,14 @@ public class SoundManager {
             category = SoundCategory.AMBIENT;
         }
 
-        Location soundLoc;
-        if (sec.contains("offset-behind")) {
-            soundLoc = getBehindLocation(player, sec.getDouble("offset-behind", 3.0));
-        } else if (sec.contains("min-distance")) {
-            soundLoc = getRandomNearbyLocation(player,
-                    sec.getInt("min-distance", 8),
-                    sec.getInt("max-distance", 15));
-        } else {
-            soundLoc = player.getLocation();
-        }
-
         if (isPrivate) {
             playPrivate(player, soundString, fallback, volume, pitch, category);
         } else {
             playAtLocation(player, soundLoc, soundString, fallback, volume, pitch, category);
         }
 
-        plugin.debug("[Sound] " + player.getName() + " ← " + soundKey);
+        plugin.debug("[Sound] " + player.getName() + " ← " + soundKey +
+                " @ " + String.format("(%.1f,%.1f,%.1f)", soundLoc.getX(), soundLoc.getY(), soundLoc.getZ()));
     }
 
     private void playPrivate(Player player, String sound, String fallback,
@@ -86,7 +91,7 @@ public class SoundManager {
             Sound vanillaSound = Sound.valueOf(name);
             player.playSound(loc, vanillaSound, category, volume, pitch);
         } catch (Exception ex) {
-            plugin.debug("[Sound] Fallback thất bại: " + fallbackStr);
+            plugin.debug("[Sound] Fallback cũng thất bại: " + fallbackStr);
         }
     }
 
@@ -102,6 +107,8 @@ public class SoundManager {
         Location loc = player.getLocation().clone();
         double angle = random.nextDouble() * 2 * Math.PI;
         double dist = minDist + random.nextDouble() * (maxDist - minDist);
-        return loc.add(Math.cos(angle) * dist, 0, Math.sin(angle) * dist);
+        double dx = Math.cos(angle) * dist;
+        double dz = Math.sin(angle) * dist;
+        return loc.add(dx, 0, dz);
     }
 }
