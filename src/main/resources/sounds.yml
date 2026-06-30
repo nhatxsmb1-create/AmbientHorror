@@ -1,7 +1,7 @@
 sounds:
 
   footstep_behind:
-    sound: "ambienthorror.footstep.gravel"
+    sound: "ambienthorror:footstep.gravel"
     fallback: "minecraft:block.gravel.step"
     volume: 2.0
     pitch: 1.0
@@ -9,14 +9,14 @@ sounds:
     offset-behind: 3.0
 
   wind_whistle:
-    sound: "ambienthorror.ambient.wind"
+    sound: "ambienthorror:ambient.wind"
     fallback: "minecraft:ambient.cave"
     volume: 2.0
     pitch: 1.0
     category: AMBIENT
 
   distant_door:
-    sound: "ambienthorror.door.creak"
+    sound: "ambienthorror:door.creak"
     fallback: "minecraft:block.wooden_door.open"
     volume: 2.0
     pitch: 1.0
@@ -25,7 +25,7 @@ sounds:
     max-distance: 20
 
   metal_hit:
-    sound: "ambienthorror.metal.hit"
+    sound: "ambienthorror:metal.hit"
     fallback: "minecraft:block.anvil.land"
     volume: 2.0
     pitch: 1.0
@@ -34,7 +34,7 @@ sounds:
     max-distance: 15
 
   tree_crack:
-    sound: "ambienthorror.tree.crack"
+    sound: "ambienthorror:tree.crack"
     fallback: "minecraft:block.wood.break"
     volume: 2.0
     pitch: 1.0
@@ -43,7 +43,7 @@ sounds:
     max-distance: 12
 
   whisper:
-    sound: "ambienthorror.whisper.close"
+    sound: "ambienthorror:whisper.close"
     fallback: "minecraft:entity.bat.ambient"
     volume: 2.0
     pitch: 1.0
@@ -51,7 +51,7 @@ sounds:
     private: true
 
   breathing_close:
-    sound: "ambienthorror.breathe.close"
+    sound: "ambienthorror:breathe.close"
     fallback: "minecraft:entity.player.breath"
     volume: 2.0
     pitch: 1.0
@@ -59,14 +59,14 @@ sounds:
     private: true
 
   shadow_flicker:
-    sound: "ambienthorror.shadow.static"
+    sound: "ambienthorror:shadow.static"
     fallback: "minecraft:block.note_block.bass"
     volume: 2.0
     pitch: 1.0
     category: AMBIENT
 
   the_man_appear:
-    sound: "ambienthorror.theman.appear"
+    sound: "ambienthorror:theman.appear"
     fallback: "minecraft:entity.warden.nearby_closer"
     volume: 2.0
     pitch: 1.0
