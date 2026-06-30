@@ -3,23 +3,23 @@ sounds:
   footstep_behind:
     sound: "ambienthorror.footstep.gravel"
     fallback: "minecraft:block.gravel.step"
-    volume: 0.4
-    pitch: 0.9
+    volume: 2.0
+    pitch: 1.0
     category: AMBIENT
     offset-behind: 3.0
 
   wind_whistle:
     sound: "ambienthorror.ambient.wind"
     fallback: "minecraft:ambient.cave"
-    volume: 0.3
-    pitch: 1.2
+    volume: 2.0
+    pitch: 1.0
     category: AMBIENT
 
   distant_door:
     sound: "ambienthorror.door.creak"
     fallback: "minecraft:block.wooden_door.open"
-    volume: 0.6
-    pitch: 0.7
+    volume: 2.0
+    pitch: 1.0
     category: AMBIENT
     min-distance: 10
     max-distance: 20
@@ -27,8 +27,8 @@ sounds:
   metal_hit:
     sound: "ambienthorror.metal.hit"
     fallback: "minecraft:block.anvil.land"
-    volume: 0.5
-    pitch: 1.1
+    volume: 2.0
+    pitch: 1.0
     category: AMBIENT
     min-distance: 8
     max-distance: 15
@@ -36,8 +36,8 @@ sounds:
   tree_crack:
     sound: "ambienthorror.tree.crack"
     fallback: "minecraft:block.wood.break"
-    volume: 0.5
-    pitch: 0.8
+    volume: 2.0
+    pitch: 1.0
     category: AMBIENT
     min-distance: 5
     max-distance: 12
@@ -45,29 +45,29 @@ sounds:
   whisper:
     sound: "ambienthorror.whisper.close"
     fallback: "minecraft:entity.bat.ambient"
-    volume: 0.2
-    pitch: 0.6
+    volume: 2.0
+    pitch: 1.0
     category: VOICE
     private: true
 
   breathing_close:
     sound: "ambienthorror.breathe.close"
     fallback: "minecraft:entity.player.breath"
-    volume: 0.25
-    pitch: 0.85
+    volume: 2.0
+    pitch: 1.0
     category: VOICE
     private: true
 
   shadow_flicker:
     sound: "ambienthorror.shadow.static"
     fallback: "minecraft:block.note_block.bass"
-    volume: 0.15
-    pitch: 0.5
+    volume: 2.0
+    pitch: 1.0
     category: AMBIENT
 
   the_man_appear:
     sound: "ambienthorror.theman.appear"
     fallback: "minecraft:entity.warden.nearby_closer"
-    volume: 0.8
-    pitch: 0.4
+    volume: 2.0
+    pitch: 1.0
     category: HOSTILE
