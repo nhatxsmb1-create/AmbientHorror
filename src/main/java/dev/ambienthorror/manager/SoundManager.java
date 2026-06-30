@@ -62,19 +62,19 @@ public class SoundManager {
 
     private void playPrivate(Player player, String sound, String fallback,
                              float volume, float pitch, SoundCategory category) {
+        playFallback(player, player.getLocation(), fallback, volume, pitch, category);
         try {
             player.playSound(player.getLocation(), sound, category, volume, pitch);
-        } catch (Exception e) {
-            playFallback(player, player.getLocation(), fallback, volume, pitch, category);
+        } catch (Exception ignored) {
         }
     }
 
     private void playAtLocation(Player player, Location loc, String sound, String fallback,
                                 float volume, float pitch, SoundCategory category) {
+        playFallback(player, loc, fallback, volume, pitch, category);
         try {
             player.playSound(loc, sound, category, volume, pitch);
-        } catch (Exception e) {
-            playFallback(player, loc, fallback, volume, pitch, category);
+        } catch (Exception ignored) {
         }
     }
 
