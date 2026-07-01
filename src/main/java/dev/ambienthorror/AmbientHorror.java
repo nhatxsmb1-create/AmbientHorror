@@ -7,6 +7,7 @@ import dev.ambienthorror.director.HorrorDirector;
 import dev.ambienthorror.manager.CombatManager;
 import dev.ambienthorror.manager.CooldownManager;
 import dev.ambienthorror.manager.PresenceManager;
+import dev.ambienthorror.manager.ShadowManager;
 import dev.ambienthorror.manager.SoundManager;
 import dev.ambienthorror.scheduler.AmbientScheduler;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -21,6 +22,7 @@ public final class AmbientHorror extends JavaPlugin {
     private CooldownManager cooldownManager;
     private CombatManager combatManager;
     private SoundManager soundManager;
+    private ShadowManager shadowManager;
     private AmbientScheduler ambientScheduler;
     private AmbientAPI ambientAPI;
 
@@ -35,6 +37,7 @@ public final class AmbientHorror extends JavaPlugin {
         cooldownManager = new CooldownManager(this);
         combatManager   = new CombatManager(this);
         soundManager    = new SoundManager(this);
+        shadowManager   = new ShadowManager(this);
         horrorDirector  = new HorrorDirector(this);
 
         ambientScheduler = new AmbientScheduler(this);
@@ -49,11 +52,12 @@ public final class AmbientHorror extends JavaPlugin {
 
         ambientAPI = new AmbientAPI(this);
 
-        log("AmbientHorror V2 started.");
+        log("AmbientHorror V3 started.");
     }
 
     @Override
     public void onDisable() {
+        if (shadowManager != null) shadowManager.cleanupAll();
         if (ambientScheduler != null) ambientScheduler.stop();
         log("AmbientHorror disabled.");
         instance = null;
@@ -66,6 +70,7 @@ public final class AmbientHorror extends JavaPlugin {
     public CooldownManager getCooldownManager(){ return cooldownManager; }
     public CombatManager getCombatManager()    { return combatManager; }
     public SoundManager getSoundManager()      { return soundManager; }
+    public ShadowManager getShadowManager()    { return shadowManager; }
     public AmbientAPI getAmbientAPI()          { return ambientAPI; }
 
     public void log(String message) {
@@ -77,4 +82,4 @@ public final class AmbientHorror extends JavaPlugin {
             getLogger().info("[DEBUG] " + message);
         }
     }
-                                             }
+}
