@@ -6,17 +6,52 @@ import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerResourcePackStatusEvent;
 
+import java.util.HashSet;
 import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
 
-public class SoundManager {
+public class SoundManager implements Listener {
 
     private final AmbientHorror plugin;
     private final Random random = new Random();
 
+    // UUID của player đã load resource pack thành công
+    private final Set<UUID> packLoaded = new HashSet<>();
+
     public SoundManager(AmbientHorror plugin) {
         this.plugin = plugin;
     }
+
+    // ── Track resource pack status ────────────────────────────
+
+    @EventHandler
+    public void onResourcePackStatus(PlayerResourcePackStatusEvent event) {
+        Player player = event.getPlayer();
+        switch (event.getStatus()) {
+            case SUCCESSFULLY_LOADED -> {
+                packLoaded.add(player.getUniqueId());
+                plugin.debug("[SoundManager] " + player.getName() + " resource pack loaded ✓");
+            }
+            case DECLINED, FAILED_DOWNLOAD, INVALID_URL -> {
+                packLoaded.remove(player.getUniqueId());
+                plugin.debug("[SoundManager] " + player.getName() + " resource pack FAILED → dùng fallback");
+            }
+            default -> {}
+        }
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        packLoaded.remove(event.getPlayer().getUniqueId());
+    }
+
+    // ── Main play method ─────────────────────────────────────
 
     public void play(Player player, String soundKey) {
         ConfigurationSection sec = plugin.getConfigManager()
@@ -32,21 +67,6 @@ public class SoundManager {
         float volume       = (float) sec.getDouble("volume", 0.5);
         float pitch        = (float) sec.getDouble("pitch", 1.0);
         boolean isPrivate  = sec.getBoolean("private", false);
-        boolean hasBehind  = sec.contains("offset-behind");
-        boolean hasDistance= sec.contains("min-distance");
-
-        Location soundLoc;
-
-        if (hasBehind) {
-            double offset = sec.getDouble("offset-behind", 3.0);
-            soundLoc = getBehindLocation(player, offset);
-        } else if (hasDistance) {
-            int minDist = sec.getInt("min-distance", 8);
-            int maxDist = sec.getInt("max-distance", 15);
-            soundLoc = getRandomNearbyLocation(player, minDist, maxDist);
-        } else {
-            soundLoc = player.getLocation();
-        }
 
         SoundCategory category;
         try {
@@ -55,33 +75,32 @@ public class SoundManager {
             category = SoundCategory.AMBIENT;
         }
 
-        if (isPrivate) {
-            playPrivate(player, soundString, fallback, volume, pitch, category);
+        Location soundLoc;
+        if (sec.contains("offset-behind")) {
+            soundLoc = getBehindLocation(player, sec.getDouble("offset-behind", 3.0));
+        } else if (sec.contains("min-distance")) {
+            soundLoc = getRandomNearbyLocation(player,
+                    sec.getInt("min-distance", 8),
+                    sec.getInt("max-distance", 15));
         } else {
-            playAtLocation(player, soundLoc, soundString, fallback, volume, pitch, category);
+            soundLoc = player.getLocation();
         }
 
-        plugin.debug("[Sound] " + player.getName() + " ← " + soundKey +
-                " @ " + String.format("(%.1f,%.1f,%.1f)", soundLoc.getX(), soundLoc.getY(), soundLoc.getZ()));
-    }
+        // Quyết định phát custom hay fallback — KHÔNG phát cả 2
+        boolean hasCustomPack = packLoaded.contains(player.getUniqueId());
 
-    private void playPrivate(Player player, String sound, String fallback,
-                             float volume, float pitch, SoundCategory category) {
-        playFallback(player, player.getLocation(), fallback, volume, pitch, category);
-        try {
-            player.playSound(player.getLocation(), sound, category, volume, pitch);
-        } catch (Exception ignored) {
+        if (hasCustomPack) {
+            // Player có resource pack → phát custom sound
+            player.playSound(soundLoc, soundString, category, volume, pitch);
+            plugin.debug("[Sound] CUSTOM " + player.getName() + " ← " + soundKey);
+        } else {
+            // Không có pack → phát vanilla fallback
+            playFallback(player, soundLoc, fallback, volume, pitch, category);
+            plugin.debug("[Sound] FALLBACK " + player.getName() + " ← " + soundKey);
         }
     }
 
-    private void playAtLocation(Player player, Location loc, String sound, String fallback,
-                                float volume, float pitch, SoundCategory category) {
-        playFallback(player, loc, fallback, volume, pitch, category);
-        try {
-            player.playSound(loc, sound, category, volume, pitch);
-        } catch (Exception ignored) {
-        }
-    }
+    // ── Helpers ──────────────────────────────────────────────
 
     private void playFallback(Player player, Location loc, String fallbackStr,
                               float volume, float pitch, SoundCategory category) {
@@ -91,7 +110,7 @@ public class SoundManager {
             Sound vanillaSound = Sound.valueOf(name);
             player.playSound(loc, vanillaSound, category, volume, pitch);
         } catch (Exception ex) {
-            plugin.debug("[Sound] Fallback cũng thất bại: " + fallbackStr);
+            plugin.debug("[Sound] Fallback thất bại: " + fallbackStr);
         }
     }
 
@@ -107,8 +126,10 @@ public class SoundManager {
         Location loc = player.getLocation().clone();
         double angle = random.nextDouble() * 2 * Math.PI;
         double dist = minDist + random.nextDouble() * (maxDist - minDist);
-        double dx = Math.cos(angle) * dist;
-        double dz = Math.sin(angle) * dist;
-        return loc.add(dx, 0, dz);
+        return loc.add(Math.cos(angle) * dist, 0, Math.sin(angle) * dist);
+    }
+
+    public boolean hasPackLoaded(Player player) {
+        return packLoaded.contains(player.getUniqueId());
     }
 }
