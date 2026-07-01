@@ -1,0 +1,33 @@
+min-presence: 60
+cooldown-seconds: 120
+
+flicker:
+  enabled: true
+  min-presence: 60
+  duration-ticks: 8
+  amplifier: 1
+  weight: 40
+
+peripheral:
+  enabled: true
+  min-presence: 65
+  despawn-seconds: 2
+  angle-degrees: 85
+  distance-blocks: 12
+  weight: 30
+
+behind:
+  enabled: true
+  min-presence: 70
+  distance-blocks: 8
+  follow-seconds: 3
+  follow-speed: 0.15
+  despawn-distance: 3
+  weight: 20
+
+entity:
+  type: ARMOR_STAND
+  invisible: true
+  silent: true
+  name: "shadow_entity"
+  name-visible: false
