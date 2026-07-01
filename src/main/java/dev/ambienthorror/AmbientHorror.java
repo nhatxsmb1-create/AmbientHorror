@@ -41,13 +41,14 @@ public final class AmbientHorror extends JavaPlugin {
         ambientScheduler.start();
 
         getServer().getPluginManager().registerEvents(combatManager, this);
+        getServer().getPluginManager().registerEvents(presenceManager, this);
 
         getCommand("ambienthorror").setExecutor(new AmbientCommand(this));
         getCommand("ambienthorror").setTabCompleter(new AmbientCommand(this));
 
         ambientAPI = new AmbientAPI(this);
 
-        log("AmbientHorror V1 started.");
+        log("AmbientHorror V2 started.");
     }
 
     @Override
@@ -58,13 +59,13 @@ public final class AmbientHorror extends JavaPlugin {
     }
 
     public static AmbientHorror getInstance() { return instance; }
-    public ConfigManager getConfigManager() { return configManager; }
+    public ConfigManager getConfigManager()   { return configManager; }
     public HorrorDirector getHorrorDirector() { return horrorDirector; }
     public PresenceManager getPresenceManager() { return presenceManager; }
     public CooldownManager getCooldownManager() { return cooldownManager; }
-    public CombatManager getCombatManager() { return combatManager; }
-    public SoundManager getSoundManager() { return soundManager; }
-    public AmbientAPI getAmbientAPI() { return ambientAPI; }
+    public CombatManager getCombatManager()     { return combatManager; }
+    public SoundManager getSoundManager()       { return soundManager; }
+    public AmbientAPI getAmbientAPI()           { return ambientAPI; }
 
     public void log(String message) {
         getLogger().info(message);
@@ -75,4 +76,4 @@ public final class AmbientHorror extends JavaPlugin {
             getLogger().info("[DEBUG] " + message);
         }
     }
-  }
+                                                }
