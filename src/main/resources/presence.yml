@@ -1,0 +1,41 @@
+increase:
+  passive: 0.5
+  standing-still: 0.8
+  darkness: 0.6
+
+decrease:
+  safe-environment: 0.3
+  daytime: 0.5
+  crowded: 0.4
+  indoors: 0.6
+
+darkness-threshold: 7
+still-distance-threshold: 1.0
+still-check-ticks: 100
+indoors-check-height: 5
+
+tiers:
+  0:
+    min: 0
+    max: 19
+    name: "Calm"
+  1:
+    min: 20
+    max: 39
+    name: "Uneasy"
+  2:
+    min: 40
+    max: 59
+    name: "Paranoid"
+  3:
+    min: 60
+    max: 79
+    name: "Hunted"
+  4:
+    min: 80
+    max: 100
+    name: "Doomed"
+
+save-on-disconnect: true
+offline-decay-per-minute: 0.5
+offline-decay-floor: 10.0
