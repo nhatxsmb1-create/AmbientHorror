@@ -16,11 +16,13 @@ public class ConfigManager {
     private FileConfiguration eventsConfig;
     private FileConfiguration soundsConfig;
     private FileConfiguration presenceConfig;
+    private FileConfiguration shadowConfig;
 
     private File directorFile;
     private File eventsFile;
     private File soundsFile;
     private File presenceFile;
+    private File shadowFile;
 
     public ConfigManager(AmbientHorror plugin) {
         this.plugin = plugin;
@@ -43,16 +45,20 @@ public class ConfigManager {
         presenceFile = saveResource("presence.yml");
         presenceConfig = YamlConfiguration.loadConfiguration(presenceFile);
 
+        shadowFile = saveResource("shadow.yml");
+        shadowConfig = YamlConfiguration.loadConfiguration(shadowFile);
+
         plugin.log("ConfigManager: tất cả configs đã load.");
     }
 
     public void reloadAll() {
         plugin.reloadConfig();
-        mainConfig      = plugin.getConfig();
-        directorConfig  = YamlConfiguration.loadConfiguration(directorFile);
-        eventsConfig    = YamlConfiguration.loadConfiguration(eventsFile);
-        soundsConfig    = YamlConfiguration.loadConfiguration(soundsFile);
-        presenceConfig  = YamlConfiguration.loadConfiguration(presenceFile);
+        mainConfig     = plugin.getConfig();
+        directorConfig = YamlConfiguration.loadConfiguration(directorFile);
+        eventsConfig   = YamlConfiguration.loadConfiguration(eventsFile);
+        soundsConfig   = YamlConfiguration.loadConfiguration(soundsFile);
+        presenceConfig = YamlConfiguration.loadConfiguration(presenceFile);
+        shadowConfig   = YamlConfiguration.loadConfiguration(shadowFile);
         plugin.log("ConfigManager: reload hoàn tất.");
     }
 
@@ -67,6 +73,7 @@ public class ConfigManager {
     public FileConfiguration getEventsConfig()   { return eventsConfig; }
     public FileConfiguration getSoundsConfig()   { return soundsConfig; }
     public FileConfiguration getPresenceConfig() { return presenceConfig; }
+    public FileConfiguration getShadowConfig()   { return shadowConfig; }
 
     public boolean isEnabled()   { return mainConfig.getBoolean("enabled", true); }
     public boolean isDebug()     { return mainConfig.getBoolean("debug", false); }
@@ -80,4 +87,4 @@ public class ConfigManager {
     public boolean isSkipInCombat()      { return mainConfig.getBoolean("skip-in-combat", true); }
     public int getCombatTimeoutSeconds() { return mainConfig.getInt("combat-timeout-seconds", 10); }
     public List<String> getEnabledWorlds() { return mainConfig.getStringList("enabled-worlds"); }
-            }
+}
