@@ -17,12 +17,10 @@ public class ConfigManager {
     private FileConfiguration soundsConfig;
     private FileConfiguration presenceConfig;
     private FileConfiguration shadowConfig;
+    private FileConfiguration zoneConfig;
 
-    private File directorFile;
-    private File eventsFile;
-    private File soundsFile;
-    private File presenceFile;
-    private File shadowFile;
+    private File directorFile, eventsFile, soundsFile;
+    private File presenceFile, shadowFile, zoneFile;
 
     public ConfigManager(AmbientHorror plugin) {
         this.plugin = plugin;
@@ -33,20 +31,23 @@ public class ConfigManager {
         plugin.reloadConfig();
         mainConfig = plugin.getConfig();
 
-        directorFile = saveResource("director.yml");
+        directorFile  = saveResource("director.yml");
         directorConfig = YamlConfiguration.loadConfiguration(directorFile);
 
-        eventsFile = saveResource("events.yml");
+        eventsFile   = saveResource("events.yml");
         eventsConfig = YamlConfiguration.loadConfiguration(eventsFile);
 
-        soundsFile = saveResource("sounds.yml");
+        soundsFile   = saveResource("sounds.yml");
         soundsConfig = YamlConfiguration.loadConfiguration(soundsFile);
 
-        presenceFile = saveResource("presence.yml");
+        presenceFile   = saveResource("presence.yml");
         presenceConfig = YamlConfiguration.loadConfiguration(presenceFile);
 
-        shadowFile = saveResource("shadow.yml");
+        shadowFile   = saveResource("shadow.yml");
         shadowConfig = YamlConfiguration.loadConfiguration(shadowFile);
+
+        zoneFile   = saveResource("zone.yml");
+        zoneConfig = YamlConfiguration.loadConfiguration(zoneFile);
 
         plugin.log("ConfigManager: tất cả configs đã load.");
     }
@@ -59,6 +60,7 @@ public class ConfigManager {
         soundsConfig   = YamlConfiguration.loadConfiguration(soundsFile);
         presenceConfig = YamlConfiguration.loadConfiguration(presenceFile);
         shadowConfig   = YamlConfiguration.loadConfiguration(shadowFile);
+        zoneConfig     = YamlConfiguration.loadConfiguration(zoneFile);
         plugin.log("ConfigManager: reload hoàn tất.");
     }
 
@@ -74,6 +76,7 @@ public class ConfigManager {
     public FileConfiguration getSoundsConfig()   { return soundsConfig; }
     public FileConfiguration getPresenceConfig() { return presenceConfig; }
     public FileConfiguration getShadowConfig()   { return shadowConfig; }
+    public FileConfiguration getZoneConfig()     { return zoneConfig; }
 
     public boolean isEnabled()   { return mainConfig.getBoolean("enabled", true); }
     public boolean isDebug()     { return mainConfig.getBoolean("debug", false); }
@@ -87,4 +90,4 @@ public class ConfigManager {
     public boolean isSkipInCombat()      { return mainConfig.getBoolean("skip-in-combat", true); }
     public int getCombatTimeoutSeconds() { return mainConfig.getInt("combat-timeout-seconds", 10); }
     public List<String> getEnabledWorlds() { return mainConfig.getStringList("enabled-worlds"); }
-}
+            }
