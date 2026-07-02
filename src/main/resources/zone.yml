@@ -1,0 +1,9 @@
+signal:
+  radius: 500
+
+ground-zero:
+  center-x: 2000
+  center-z: 2000
+  radius: 150
+  unlocked: false
+  unlock-chapter: 3
