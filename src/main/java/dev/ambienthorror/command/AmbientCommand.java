@@ -45,13 +45,38 @@ public class AmbientCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage("§e[AmbientHorror] Debug: §f" + !current);
                 yield true;
             }
+            case "sanity" -> {
+                if (args.length < 3) {
+                    if (sender instanceof Player p) {
+                        double san = plugin.getSanityManager().getSanity(p);
+                        int tier = plugin.getSanityManager().getTierFromValue(san);
+                        sender.sendMessage("§b[AmbientHorror] Sanity: §f" +
+                                String.format("%.1f", san) + " §7(" +
+                                plugin.getSanityManager().getTierName(tier) + ")");
+                    } else {
+                        sender.sendMessage("§cUsage: /ah sanity <player> <value>");
+                    }
+                    yield true;
+                }
+                Player target = plugin.getServer().getPlayer(args[1]);
+                if (target == null) { sender.sendMessage("§cKhông tìm thấy: " + args[1]); yield true; }
+                try {
+                    double value = Double.parseDouble(args[2]);
+                    plugin.getSanityManager().setSanity(target, value);
+                    sender.sendMessage("§aSet sanity §f" + target.getName() + " → " + value);
+                } catch (NumberFormatException e) {
+                    sender.sendMessage("§cGiá trị không hợp lệ.");
+                }
+                yield true;
+            }
             case "presence" -> {
                 if (args.length < 3) {
                     if (sender instanceof Player p) {
-                        double pres = plugin.getPresenceManager().getPresence(p);
-                        int tier = plugin.getPresenceManager().getPresenceTier(p);
-                        sender.sendMessage("§b[AmbientHorror] Presence: §f" +
-                                String.format("%.1f", pres) + " §7(Tier " + tier + ")");
+                        double san = plugin.getSanityManager().getSanity(p);
+                        int tier = plugin.getSanityManager().getTierFromValue(san);
+                        sender.sendMessage("§b[AmbientHorror] Sanity: §f" +
+                                String.format("%.1f", san) + " §7(" +
+                                plugin.getSanityManager().getTierName(tier) + ")");
                     } else {
                         sender.sendMessage("§cUsage: /ah presence <player> <value>");
                     }
@@ -61,8 +86,8 @@ public class AmbientCommand implements CommandExecutor, TabCompleter {
                 if (target == null) { sender.sendMessage("§cKhông tìm thấy: " + args[1]); yield true; }
                 try {
                     double value = Double.parseDouble(args[2]);
-                    plugin.getPresenceManager().setPresence(target, value);
-                    sender.sendMessage("§aSet presence §f" + target.getName() + " → " + value);
+                    plugin.getSanityManager().setSanity(target, value);
+                    sender.sendMessage("§aSet sanity §f" + target.getName() + " → " + value);
                 } catch (NumberFormatException e) {
                     sender.sendMessage("§cGiá trị không hợp lệ.");
                 }
@@ -74,10 +99,14 @@ public class AmbientCommand implements CommandExecutor, TabCompleter {
                         : (sender instanceof Player p ? p : null);
                 if (target == null) { sender.sendMessage("§cUsage: /ah score <player>"); yield true; }
                 double score = plugin.getHorrorDirector().calculateScore(target);
-                double presence = plugin.getPresenceManager().getPresence(target);
-                sender.sendMessage("§b" + target.getName() + " §7Score:§f " +
-                        String.format("%.1f", score) + " §7Presence:§f " +
-                        String.format("%.1f", presence));
+                double sanity = plugin.getSanityManager().getSanity(target);
+                String zone = plugin.getZoneManager().getZone(target);
+                sender.sendMessage("§b" + target.getName() + ":");
+                sender.sendMessage("§7  Director Score: §f" + String.format("%.1f", score));
+                sender.sendMessage("§7  Sanity: §f" + String.format("%.1f", sanity) +
+                        " §7(" + plugin.getSanityManager().getTierName(
+                        plugin.getSanityManager().getTierFromValue(sanity)) + ")");
+                sender.sendMessage("§7  Zone: §f" + plugin.getZoneManager().getZoneDisplayName(zone));
                 yield true;
             }
             case "event" -> {
@@ -88,6 +117,16 @@ public class AmbientCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage("§aTriggered §f" + args[2] + " → " + target.getName());
                 yield true;
             }
+            case "zone" -> {
+                Player target = args.length >= 2
+                        ? plugin.getServer().getPlayer(args[1])
+                        : (sender instanceof Player p ? p : null);
+                if (target == null) { sender.sendMessage("§cUsage: /ah zone <player>"); yield true; }
+                String zone = plugin.getZoneManager().getZone(target);
+                sender.sendMessage("§b" + target.getName() + " đang ở: §f" +
+                        plugin.getZoneManager().getZoneDisplayName(zone));
+                yield true;
+            }
             default -> { sendHelp(sender); yield true; }
         };
     }
@@ -95,17 +134,18 @@ public class AmbientCommand implements CommandExecutor, TabCompleter {
     private void sendHelp(CommandSender sender) {
         sender.sendMessage("§b[AmbientHorror] Commands:");
         sender.sendMessage("§7  /ah reload | status | debug");
-        sender.sendMessage("§7  /ah presence [player] [value]");
-        sender.sendMessage("§7  /ah score [player]");
-        sender.sendMessage("§7  /ah event <player> <key>");
+        sender.sendMessage("§7  /ah sanity <player> <value> §f- Set sanity (0-100)");
+        sender.sendMessage("§7  /ah score <player> §f- Xem director score + sanity + zone");
+        sender.sendMessage("§7  /ah zone <player> §f- Xem zone hiện tại");
+        sender.sendMessage("§7  /ah event <player> <key> §f- Force trigger event");
     }
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (!sender.hasPermission("ambienthorror.admin")) return List.of();
         if (args.length == 1)
-            return Arrays.asList("reload", "status", "debug", "presence", "score", "event");
-        if (args.length == 2 && List.of("presence","event","score").contains(args[0].toLowerCase()))
+            return Arrays.asList("reload", "status", "debug", "sanity", "presence", "score", "zone", "event");
+        if (args.length == 2 && List.of("sanity","presence","score","zone","event").contains(args[0].toLowerCase()))
             return plugin.getServer().getOnlinePlayers().stream().map(Player::getName).toList();
         if (args.length == 3 && args[0].equalsIgnoreCase("event")) {
             var sec = plugin.getConfigManager().getEventsConfig().getConfigurationSection("events");
@@ -113,4 +153,4 @@ public class AmbientCommand implements CommandExecutor, TabCompleter {
         }
         return List.of();
     }
-}
+                    }
