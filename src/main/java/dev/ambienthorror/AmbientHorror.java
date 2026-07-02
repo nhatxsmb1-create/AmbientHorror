@@ -4,11 +4,7 @@ import dev.ambienthorror.api.AmbientAPI;
 import dev.ambienthorror.command.AmbientCommand;
 import dev.ambienthorror.config.ConfigManager;
 import dev.ambienthorror.director.HorrorDirector;
-import dev.ambienthorror.manager.CombatManager;
-import dev.ambienthorror.manager.CooldownManager;
-import dev.ambienthorror.manager.PresenceManager;
-import dev.ambienthorror.manager.ShadowManager;
-import dev.ambienthorror.manager.SoundManager;
+import dev.ambienthorror.manager.*;
 import dev.ambienthorror.scheduler.AmbientScheduler;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -18,7 +14,9 @@ public final class AmbientHorror extends JavaPlugin {
 
     private ConfigManager configManager;
     private HorrorDirector horrorDirector;
-    private PresenceManager presenceManager;
+    private SanityManager sanityManager;
+    private SanityUI sanityUI;
+    private ZoneManager zoneManager;
     private CooldownManager cooldownManager;
     private CombatManager combatManager;
     private SoundManager soundManager;
@@ -33,7 +31,9 @@ public final class AmbientHorror extends JavaPlugin {
         configManager = new ConfigManager(this);
         configManager.loadAll();
 
-        presenceManager = new PresenceManager(this);
+        zoneManager     = new ZoneManager(this);
+        sanityUI        = new SanityUI(this);
+        sanityManager   = new SanityManager(this);
         cooldownManager = new CooldownManager(this);
         combatManager   = new CombatManager(this);
         soundManager    = new SoundManager(this);
@@ -44,7 +44,7 @@ public final class AmbientHorror extends JavaPlugin {
         ambientScheduler.start();
 
         getServer().getPluginManager().registerEvents(combatManager, this);
-        getServer().getPluginManager().registerEvents(presenceManager, this);
+        getServer().getPluginManager().registerEvents(sanityManager, this);
         getServer().getPluginManager().registerEvents(soundManager, this);
 
         getCommand("ambienthorror").setExecutor(new AmbientCommand(this));
@@ -52,13 +52,14 @@ public final class AmbientHorror extends JavaPlugin {
 
         ambientAPI = new AmbientAPI(this);
 
-        log("AmbientHorror V3 started.");
+        log("The Last Broadcast — AmbientHorror started.");
     }
 
     @Override
     public void onDisable() {
         if (shadowManager != null) shadowManager.cleanupAll();
         if (ambientScheduler != null) ambientScheduler.stop();
+        getServer().getOnlinePlayers().forEach(p -> sanityUI.removePlayer(p));
         log("AmbientHorror disabled.");
         instance = null;
     }
@@ -66,12 +67,15 @@ public final class AmbientHorror extends JavaPlugin {
     public static AmbientHorror getInstance() { return instance; }
     public ConfigManager getConfigManager()    { return configManager; }
     public HorrorDirector getHorrorDirector()  { return horrorDirector; }
-    public PresenceManager getPresenceManager(){ return presenceManager; }
+    public SanityManager getSanityManager()    { return sanityManager; }
+    public SanityUI getSanityUI()              { return sanityUI; }
+    public ZoneManager getZoneManager()        { return zoneManager; }
     public CooldownManager getCooldownManager(){ return cooldownManager; }
     public CombatManager getCombatManager()    { return combatManager; }
     public SoundManager getSoundManager()      { return soundManager; }
     public ShadowManager getShadowManager()    { return shadowManager; }
     public AmbientAPI getAmbientAPI()          { return ambientAPI; }
+    public SanityManager getPresenceManager()  { return sanityManager; }
 
     public void log(String message) {
         getLogger().info(message);
