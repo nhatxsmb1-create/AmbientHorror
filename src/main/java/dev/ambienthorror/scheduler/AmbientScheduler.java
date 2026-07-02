@@ -27,13 +27,9 @@ public class AmbientScheduler {
                 if (player.hasPermission("ambienthorror.bypass")) continue;
                 if (!isWorldEnabled(player)) continue;
 
-                // Tick presence luôn, không cần check đêm/ngày
-                plugin.getPresenceManager().tickPresence(player);
-
-                // Tick shadow (V3) — có logic riêng bên trong
+                plugin.getSanityManager().tickSanity(player);
                 plugin.getShadowManager().tickShadow(player);
 
-                // Ambient sound event — chỉ ban đêm
                 if (plugin.getConfigManager().isNightOnly() && !isNight(player)) continue;
                 if (plugin.getCombatManager().isInCombat(player)) continue;
                 if (!plugin.getHorrorDirector().isScoreSufficient(player)) continue;
