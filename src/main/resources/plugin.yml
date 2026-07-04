@@ -15,10 +15,6 @@ commands:
     aliases: [ah]
     usage: /ah <reload|status|debug|sanity|score|zone|event>
     permission: ambienthorror.admin
-  radio:
-    description: Radio broadcast system
-    aliases: [r]
-    usage: /radio <give|lore|static|log|scheduled>
 
 permissions:
   ambienthorror.admin:
