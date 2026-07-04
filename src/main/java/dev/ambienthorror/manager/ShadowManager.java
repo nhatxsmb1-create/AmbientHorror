@@ -25,9 +25,21 @@ public class ShadowManager {
         this.plugin = plugin;
     }
 
+    /**
+     * Trigger một loại shadow cụ thể từ Director
+     */
+    public void triggerSpecific(Player player, String type) {
+        FileConfiguration cfg = plugin.getConfigManager().getShadowConfig();
+        switch (type.toLowerCase()) {
+            case "flicker"    -> triggerFlicker(player, cfg);
+            case "peripheral" -> triggerPeripheral(player, cfg);
+            case "behind"     -> triggerBehind(player, cfg);
+        }
+    }
+
     public void tickShadow(Player player) {
         FileConfiguration cfg = plugin.getConfigManager().getShadowConfig();
-        double presence = plugin.getPresenceManager().getPresence(player);
+        double presence = plugin.getSanityManager().getPresence(player);
         double minPresence = cfg.getDouble("min-presence", 60);
         if (presence < minPresence) return;
 
@@ -48,8 +60,7 @@ public class ShadowManager {
             case "behind"     -> triggerBehind(player, cfg);
         }
 
-        plugin.debug("[Shadow] " + type.toUpperCase() + " → " + player.getName() +
-                " (presence=" + String.format("%.1f", presence) + ")");
+        plugin.debug("[Shadow] " + type.toUpperCase() + " → " + player.getName());
     }
 
     private void triggerFlicker(Player player, FileConfiguration cfg) {
@@ -72,7 +83,6 @@ public class ShadowManager {
         if (shadow == null) return;
 
         activeShadows.put(player.getUniqueId(), shadow);
-
         BukkitTask task = plugin.getServer().getScheduler().runTaskLater(plugin,
                 () -> despawnShadow(player), despawnSec * 20L);
         activeTasks.put(player.getUniqueId(), task);
@@ -98,19 +108,14 @@ public class ShadowManager {
                 return;
             }
             tickCount[0]++;
-
             if (isPlayerLookingAt(player, shadow)) {
                 plugin.debug("[Shadow] " + player.getName() + " nhìn vào shadow → despawn");
                 despawnShadow(player);
                 return;
             }
-
             if (tickCount[0] >= followStartTick) {
                 double dist = shadow.getLocation().distance(player.getLocation());
-                if (dist <= despawnDist) {
-                    despawnShadow(player);
-                    return;
-                }
+                if (dist <= despawnDist) { despawnShadow(player); return; }
                 Vector dir = player.getLocation().toVector()
                         .subtract(shadow.getLocation().toVector())
                         .normalize().multiply(followSpeed);
@@ -205,4 +210,4 @@ public class ShadowManager {
         }
         return eligible.get(0)[0];
     }
-    }
+}
