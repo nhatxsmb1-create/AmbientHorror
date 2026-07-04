@@ -27,9 +27,16 @@ public class AmbientScheduler {
                 if (player.hasPermission("ambienthorror.bypass")) continue;
                 if (!isWorldEnabled(player)) continue;
 
+                // 1. Tick sanity
                 plugin.getSanityManager().tickSanity(player);
+
+                // 2. Director V2 tick
+                plugin.getHorrorDirector().tick(player);
+
+                // 3. Shadow tick
                 plugin.getShadowManager().tickShadow(player);
 
+                // 4. Ambient sound — chỉ ban đêm, không combat
                 if (plugin.getConfigManager().isNightOnly() && !isNight(player)) continue;
                 if (plugin.getCombatManager().isInCombat(player)) continue;
                 if (!plugin.getHorrorDirector().isScoreSufficient(player)) continue;
@@ -43,13 +50,13 @@ public class AmbientScheduler {
                 plugin.getCooldownManager().markTriggered(player, event.key());
                 plugin.getSoundManager().play(player, event.soundKey());
 
-                plugin.debug("[Scheduler] Triggered " + event.key() +
+                plugin.debug("[Scheduler] Ambient " + event.key() +
                         " → " + player.getName());
             }
 
         }, interval, interval);
 
-        plugin.log("AmbientScheduler started (interval=" + interval + " ticks)");
+        plugin.log("AmbientScheduler V2 started (interval=" + interval + " ticks)");
     }
 
     public void stop() {
