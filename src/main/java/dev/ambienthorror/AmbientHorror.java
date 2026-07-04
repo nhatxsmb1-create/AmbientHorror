@@ -52,11 +52,6 @@ public final class AmbientHorror extends JavaPlugin {
 
         ambientAPI = new AmbientAPI(this);
 
-        if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
-            new dev.ambienthorror.placeholder.AmbientHorrorExpansion(this).register();
-            log("PlaceholderAPI expansion registered.");
-        }
-
         log("The Last Broadcast — AmbientHorror started.");
     }
 
@@ -82,7 +77,9 @@ public final class AmbientHorror extends JavaPlugin {
     public AmbientAPI getAmbientAPI()          { return ambientAPI; }
     public SanityManager getPresenceManager()  { return sanityManager; }
 
-    public void log(String message) { getLogger().info(message); }
+    public void log(String message) {
+        getLogger().info(message);
+    }
 
     public void debug(String message) {
         if (configManager != null && configManager.isDebug()) {
