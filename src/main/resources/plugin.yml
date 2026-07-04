@@ -6,14 +6,19 @@ description: Psychological Horror Ambient System
 author: YourName
 website: ''
 
-softdepend: []
+softdepend:
+  - PlaceholderAPI
 
 commands:
   ambienthorror:
     description: AmbientHorror main command
     aliases: [ah]
-    usage: /ah <reload|status|debug|presence>
+    usage: /ah <reload|status|debug|sanity|score|zone|event>
     permission: ambienthorror.admin
+  radio:
+    description: Radio broadcast system
+    aliases: [r]
+    usage: /radio <give|lore|static|log|scheduled>
 
 permissions:
   ambienthorror.admin:
