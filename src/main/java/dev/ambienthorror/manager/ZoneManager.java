@@ -38,10 +38,10 @@ public class ZoneManager {
 
     public String getZoneDisplayName(String zone) {
         return switch (zone) {
-            case "SIGNAL"      -> "§aSignal Zone";
-            case "DEAD"        -> "§cDead Zone";
-            case "GROUND_ZERO" -> "§4Ground Zero";
-            default            -> "§7Unknown";
+            case "SIGNAL"      -> "Signal Zone";
+            case "DEAD"        -> "Dead Zone";
+            case "GROUND_ZERO" -> "Ground Zero";
+            default            -> "Unknown";
         };
     }
 
