@@ -9,9 +9,6 @@
     <version>1.0.0-V1</version>
     <packaging>jar</packaging>
 
-    <name>AmbientHorror</name>
-    <description>Psychological Horror Ambient System for Paper 1.21.8</description>
-
     <properties>
         <java.version>21</java.version>
         <maven.compiler.source>21</maven.compiler.source>
@@ -29,8 +26,8 @@
             <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
         </repository>
         <repository>
-            <id>modelengine</id>
-            <url>https://repo.modelengine.gg/releases</url>
+            <id>jitpack</id>
+            <url>https://jitpack.io</url>
         </repository>
     </repositories>
 
@@ -48,8 +45,8 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.ticxo.modelengine</groupId>
-            <artifactId>ModelEngine</artifactId>
+            <groupId>com.github.Ticxo</groupId>
+            <artifactId>Model-Engine</artifactId>
             <version>R4.0.7</version>
             <scope>provided</scope>
         </dependency>
@@ -81,7 +78,7 @@
                                 <excludes>
                                     <exclude>io.papermc.paper:*</exclude>
                                     <exclude>me.clip:*</exclude>
-                                    <exclude>com.ticxo.modelengine:*</exclude>
+                                    <exclude>com.github.Ticxo:*</exclude>
                                 </excludes>
                             </artifactSet>
                         </configuration>
