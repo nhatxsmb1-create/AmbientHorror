@@ -1,14 +1,13 @@
 package dev.ambienthorror.theman;
 
-import com.ticxo.modelengine.api.ModelEngineAPI;
-import com.ticxo.modelengine.api.model.ActiveModel;
-import com.ticxo.modelengine.api.model.ModeledEntity;
 import dev.ambienthorror.AmbientHorror;
 import org.bukkit.Location;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
+
+import java.lang.reflect.Method;
 
 public class TheMan {
 
@@ -17,10 +16,11 @@ public class TheMan {
     private final AmbientHorror plugin;
     private final Player target;
     private ArmorStand baseEntity;
-    private ModeledEntity modeledEntity;
-    private ActiveModel activeModel;
+    private Object modeledEntity;
+    private Object activeModel;
     private Phase currentPhase;
     private boolean active = false;
+    private String currentAnim = "";
 
     private static final String MODEL_ID = "manfog";
 
@@ -40,30 +40,44 @@ public class TheMan {
                 e.setCustomNameVisible(false);
             });
 
-            modeledEntity = ModelEngineAPI.createModeledEntity(baseEntity);
+            Class<?> apiClass = Class.forName("com.ticxo.modelengine.api.ModelEngineAPI");
+
+            Method createModeledEntity = apiClass.getMethod("createModeledEntity",
+                    org.bukkit.entity.Entity.class);
+            modeledEntity = createModeledEntity.invoke(null, baseEntity);
             if (modeledEntity == null) {
                 baseEntity.remove();
-                plugin.log("[TheMan] ModelEngine không thể tạo ModeledEntity!");
+                plugin.log("[TheMan] createModeledEntity trả về null!");
                 return false;
             }
 
-            activeModel = ModelEngineAPI.createActiveModel(MODEL_ID);
+            Method createActiveModel = apiClass.getMethod("createActiveModel", String.class);
+            activeModel = createActiveModel.invoke(null, MODEL_ID);
             if (activeModel == null) {
                 baseEntity.remove();
                 plugin.log("[TheMan] Không tìm thấy model: " + MODEL_ID);
                 return false;
             }
 
-            modeledEntity.addModel(activeModel, true);
-            modeledEntity.setBaseEntityVisible(false);
-            playAnimation("idle");
+            Method addModel = modeledEntity.getClass().getMethod("addModel",
+                    Class.forName("com.ticxo.modelengine.api.model.ActiveModel"),
+                    boolean.class);
+            addModel.invoke(modeledEntity, activeModel, true);
 
+            Method setVisible = modeledEntity.getClass().getMethod(
+                    "setBaseEntityVisible", boolean.class);
+            setVisible.invoke(modeledEntity, false);
+
+            playAnimation("idle");
             this.currentPhase = phase;
             this.active = true;
-
             plugin.debug("[TheMan] Spawned " + phase + " → " + target.getName());
             return true;
 
+        } catch (ClassNotFoundException e) {
+            plugin.log("[TheMan] ModelEngine không được cài!");
+            if (baseEntity != null && !baseEntity.isDead()) baseEntity.remove();
+            return false;
         } catch (Exception e) {
             plugin.log("[TheMan] Lỗi spawn: " + e.getMessage());
             if (baseEntity != null && !baseEntity.isDead()) baseEntity.remove();
@@ -75,7 +89,10 @@ public class TheMan {
         if (!active) return;
         active = false;
         try {
-            if (modeledEntity != null) modeledEntity.destroy();
+            if (modeledEntity != null) {
+                Method destroy = modeledEntity.getClass().getMethod("destroy");
+                destroy.invoke(modeledEntity);
+            }
         } catch (Exception ignored) {}
         if (baseEntity != null && !baseEntity.isDead()) baseEntity.remove();
         plugin.debug("[TheMan] Despawned → " + target.getName());
@@ -87,7 +104,6 @@ public class TheMan {
             return;
         }
         if (!target.isOnline()) { despawn(); return; }
-
         switch (currentPhase) {
             case PHASE_1 -> tickPhase1();
             case PHASE_2 -> tickPhase2();
@@ -100,23 +116,24 @@ public class TheMan {
         if (isPlayerLookingAt()) {
             playAnimation("death");
             plugin.getServer().getScheduler().runTaskLater(plugin, this::despawn, 10L);
+            return;
         }
-        if (!"idle".equals(getCurrentAnimation())) playAnimation("idle");
+        if (!"idle".equals(currentAnim)) playAnimation("idle");
     }
 
     private void tickPhase2() {
         if (isPlayerLookingAt()) {
-            if (!"idle".equals(getCurrentAnimation())) playAnimation("idle");
+            if (!"idle".equals(currentAnim)) playAnimation("idle");
             return;
         }
         moveToward(0.12);
-        if (!"walk".equals(getCurrentAnimation())) playAnimation("walk");
+        if (!"walk".equals(currentAnim)) playAnimation("walk");
         if (getDistanceToPlayer() <= 3.0) onReachPlayer();
     }
 
     private void tickPhase3() {
         moveToward(0.22);
-        if (!"walk".equals(getCurrentAnimation())) playAnimation("walk");
+        if (!"walk".equals(currentAnim)) playAnimation("walk");
         if (getDistanceToPlayer() <= 3.0) onReachPlayer();
     }
 
@@ -125,15 +142,15 @@ public class TheMan {
         plugin.getSanityManager().setSanity(target, 0);
         plugin.getSanityUI().onTierChange(target, 3);
         plugin.getServer().getScheduler().runTaskLater(plugin, this::despawn, 40L);
-        plugin.debug("[TheMan] Reached player → " + target.getName());
+        plugin.debug("[TheMan] Reached → " + target.getName());
     }
 
     private void moveToward(double speed) {
         if (baseEntity == null || baseEntity.isDead()) return;
         Location myLoc = baseEntity.getLocation();
-        Vector direction = target.getLocation().toVector()
+        Vector dir = target.getLocation().toVector()
                 .subtract(myLoc.toVector()).normalize().multiply(speed);
-        Location newLoc = myLoc.clone().add(direction);
+        Location newLoc = myLoc.clone().add(dir);
         newLoc.setYaw(myLoc.getYaw());
         newLoc.setPitch(myLoc.getPitch());
         baseEntity.teleport(newLoc);
@@ -142,8 +159,8 @@ public class TheMan {
     private void facePlayer() {
         if (baseEntity == null || baseEntity.isDead()) return;
         Location myLoc = baseEntity.getLocation();
-        Vector direction = target.getLocation().toVector().subtract(myLoc.toVector());
-        float yaw = (float) Math.toDegrees(Math.atan2(-direction.getX(), direction.getZ()));
+        Vector dir = target.getLocation().toVector().subtract(myLoc.toVector());
+        float yaw = (float) Math.toDegrees(Math.atan2(-dir.getX(), dir.getZ()));
         Location facing = myLoc.clone();
         facing.setYaw(yaw);
         baseEntity.teleport(facing);
@@ -162,30 +179,26 @@ public class TheMan {
     }
 
     private void playAnimation(String animName) {
-        if (activeModel == null) return;
+        if (activeModel == null || animName.equals(currentAnim)) return;
         try {
-            activeModel.getAnimationHandler().playAnimation(animName, 0.1, 0.1, 1.0, true);
+            Method getHandler = activeModel.getClass().getMethod("getAnimationHandler");
+            Object handler = getHandler.invoke(activeModel);
+            Method playAnim = handler.getClass().getMethod("playAnimation",
+                    String.class, double.class, double.class, double.class, boolean.class);
+            playAnim.invoke(handler, animName, 0.1, 0.1, 1.0, true);
+            currentAnim = animName;
         } catch (Exception e) {
-            plugin.debug("[TheMan] Animation error: " + e.getMessage());
+            plugin.debug("[TheMan] Animation error (" + animName + "): " + e.getMessage());
         }
     }
 
-    private String getCurrentAnimation() {
-        if (activeModel == null) return "";
-        try {
-            var playing = activeModel.getAnimationHandler().getPlayingAnimations();
-            if (playing != null && !playing.isEmpty())
-                return playing.keySet().iterator().next();
-        } catch (Exception ignored) {}
-        return "";
-    }
+    public boolean isActive()     { return active; }
+    public Player getTarget()     { return target; }
+    public Phase getPhase()       { return currentPhase; }
+    public Entity getBaseEntity() { return baseEntity; }
 
-    public boolean isActive()        { return active; }
-    public Player getTarget()        { return target; }
-    public Phase getPhase()          { return currentPhase; }
-    public Entity getBaseEntity()    { return baseEntity; }
     public void setPhase(Phase phase) {
         this.currentPhase = phase;
         plugin.debug("[TheMan] Phase → " + phase + " for " + target.getName());
     }
-              }
+}
