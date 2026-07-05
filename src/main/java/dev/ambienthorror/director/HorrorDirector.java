@@ -1,6 +1,7 @@
 package dev.ambienthorror.director;
 
 import dev.ambienthorror.AmbientHorror;
+import dev.ambienthorror.theman.TheMan.Phase;
 import org.bukkit.World;
 import org.bukkit.block.Biome;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -83,9 +84,11 @@ public class HorrorDirector {
                 actions.add(DirectorAction.SANITY_DRAIN);
         }
 
+        // The Man — sanity < 20, đêm, một mình
         if (ctx.sanity() < 20 && ctx.isNight() && ctx.isAlone() &&
+            !plugin.getTheManManager().isActive(ctx.player()) &&
             memory.canTrigger(uuid, DirectorAction.THE_MAN_HINT)) {
-            if (random.nextInt(100) < 15)
+            if (random.nextInt(100) < 20)
                 actions.add(DirectorAction.THE_MAN_HINT);
         }
 
@@ -126,9 +129,10 @@ public class HorrorDirector {
                 plugin.debug("[Director] SANITY_DRAIN → " + player.getName());
             }
             case THE_MAN_HINT -> {
-                plugin.getSoundManager().play(player, "the_man_appear");
+                // Spawn The Man thật sự
+                plugin.getTheManManager().spawnForPlayer(player);
                 memory.markTriggered(uuid, action);
-                plugin.debug("[Director] THE_MAN_HINT → " + player.getName());
+                plugin.debug("[Director] THE_MAN_SPAWN → " + player.getName());
             }
             default -> {}
         }
