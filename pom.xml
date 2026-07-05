@@ -28,6 +28,10 @@
             <id>placeholderapi</id>
             <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
         </repository>
+        <repository>
+            <id>modelengine</id>
+            <url>https://repo.modelengine.gg/releases</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -41,6 +45,12 @@
             <groupId>me.clip</groupId>
             <artifactId>placeholderapi</artifactId>
             <version>2.11.6</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.ticxo.modelengine</groupId>
+            <artifactId>ModelEngine</artifactId>
+            <version>R4.0.7</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
@@ -71,6 +81,7 @@
                                 <excludes>
                                     <exclude>io.papermc.paper:*</exclude>
                                     <exclude>me.clip:*</exclude>
+                                    <exclude>com.ticxo.modelengine:*</exclude>
                                 </excludes>
                             </artifactSet>
                         </configuration>
