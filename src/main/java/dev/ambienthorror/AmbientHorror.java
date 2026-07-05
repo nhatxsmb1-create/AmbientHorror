@@ -6,6 +6,7 @@ import dev.ambienthorror.config.ConfigManager;
 import dev.ambienthorror.director.HorrorDirector;
 import dev.ambienthorror.manager.*;
 import dev.ambienthorror.scheduler.AmbientScheduler;
+import dev.ambienthorror.theman.TheManManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class AmbientHorror extends JavaPlugin {
@@ -21,6 +22,7 @@ public final class AmbientHorror extends JavaPlugin {
     private CombatManager combatManager;
     private SoundManager soundManager;
     private ShadowManager shadowManager;
+    private TheManManager theManManager;
     private AmbientScheduler ambientScheduler;
     private AmbientAPI ambientAPI;
 
@@ -38,14 +40,17 @@ public final class AmbientHorror extends JavaPlugin {
         combatManager   = new CombatManager(this);
         soundManager    = new SoundManager(this);
         shadowManager   = new ShadowManager(this);
+        theManManager   = new TheManManager(this);
         horrorDirector  = new HorrorDirector(this);
 
         ambientScheduler = new AmbientScheduler(this);
         ambientScheduler.start();
+        theManManager.start();
 
         getServer().getPluginManager().registerEvents(combatManager, this);
         getServer().getPluginManager().registerEvents(sanityManager, this);
         getServer().getPluginManager().registerEvents(soundManager, this);
+        getServer().getPluginManager().registerEvents(theManManager, this);
 
         getCommand("ambienthorror").setExecutor(new AmbientCommand(this));
         getCommand("ambienthorror").setTabCompleter(new AmbientCommand(this));
@@ -62,6 +67,7 @@ public final class AmbientHorror extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (theManManager != null) theManManager.stop();
         if (shadowManager != null) shadowManager.cleanupAll();
         if (ambientScheduler != null) ambientScheduler.stop();
         getServer().getOnlinePlayers().forEach(p -> sanityUI.removePlayer(p));
@@ -79,6 +85,7 @@ public final class AmbientHorror extends JavaPlugin {
     public CombatManager getCombatManager()    { return combatManager; }
     public SoundManager getSoundManager()      { return soundManager; }
     public ShadowManager getShadowManager()    { return shadowManager; }
+    public TheManManager getTheManManager()    { return theManManager; }
     public AmbientAPI getAmbientAPI()          { return ambientAPI; }
     public SanityManager getPresenceManager()  { return sanityManager; }
 
