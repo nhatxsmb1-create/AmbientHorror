@@ -40,37 +40,128 @@ public class TheMan {
                 e.setCustomNameVisible(false);
             });
 
+            // R4.0.9: dùng ModelEngineAPI.api() để lấy instance
             Class<?> apiClass = Class.forName("com.ticxo.modelengine.api.ModelEngineAPI");
 
-            Method createModeledEntity = apiClass.getMethod("createModeledEntity",
-                    org.bukkit.entity.Entity.class);
-            modeledEntity = createModeledEntity.invoke(null, baseEntity);
+            // Lấy ModelEngine instance
+            Object apiInstance = null;
+            try {
+                Method getApi = apiClass.getMethod("api");
+                apiInstance = getApi.invoke(null);
+            } catch (Exception e1) {
+                // Fallback: static method trực tiếp
+                plugin.debug("[TheMan] api() failed, trying static: " + e1.getMessage());
+            }
+
+            // Tạo ModeledEntity
+            if (apiInstance != null) {
+                try {
+                    Method getEntityFactory = apiInstance.getClass()
+                            .getMethod("getModeledEntityFactory");
+                    Object factory = getEntityFactory.invoke(apiInstance);
+                    Method create = factory.getClass().getMethod("create",
+                            org.bukkit.entity.Entity.class);
+                    modeledEntity = create.invoke(factory, baseEntity);
+                } catch (Exception e2) {
+                    plugin.debug("[TheMan] factory create failed: " + e2.getMessage());
+                }
+            }
+
+            // Fallback về static method cũ nếu factory không work
+            if (modeledEntity == null) {
+                try {
+                    Method createModeledEntity = apiClass.getMethod(
+                            "createModeledEntity", org.bukkit.entity.Entity.class);
+                    modeledEntity = createModeledEntity.invoke(null, baseEntity);
+                } catch (Exception e3) {
+                    plugin.debug("[TheMan] createModeledEntity failed: " + e3.getMessage());
+                }
+            }
+
             if (modeledEntity == null) {
                 baseEntity.remove();
-                plugin.log("[TheMan] createModeledEntity trả về null!");
+                plugin.log("[TheMan] Không thể tạo ModeledEntity!");
                 return false;
             }
 
-            Method createActiveModel = apiClass.getMethod("createActiveModel", String.class);
-            activeModel = createActiveModel.invoke(null, MODEL_ID);
+            // Tạo ActiveModel
+            try {
+                if (apiInstance != null) {
+                    Method getModelFactory = apiInstance.getClass()
+                            .getMethod("getModelRegistry");
+                    Object registry = getModelFactory.invoke(apiInstance);
+                    Method getModel = registry.getClass().getMethod("getModel", String.class);
+                    Object blueprint = getModel.invoke(registry, MODEL_ID);
+                    if (blueprint != null) {
+                        Method createModel = blueprint.getClass().getMethod("createActiveModel");
+                        activeModel = createModel.invoke(blueprint);
+                    }
+                }
+            } catch (Exception e4) {
+                plugin.debug("[TheMan] registry getModel failed: " + e4.getMessage());
+            }
+
+            // Fallback static createActiveModel
+            if (activeModel == null) {
+                try {
+                    Method createActiveModel = apiClass.getMethod(
+                            "createActiveModel", String.class);
+                    activeModel = createActiveModel.invoke(null, MODEL_ID);
+                } catch (Exception e5) {
+                    plugin.debug("[TheMan] createActiveModel failed: " + e5.getMessage());
+                }
+            }
+
             if (activeModel == null) {
                 baseEntity.remove();
                 plugin.log("[TheMan] Không tìm thấy model: " + MODEL_ID);
                 return false;
             }
 
-            Method addModel = modeledEntity.getClass().getMethod("addModel",
-                    Class.forName("com.ticxo.modelengine.api.model.ActiveModel"),
-                    boolean.class);
-            addModel.invoke(modeledEntity, activeModel, true);
+            // addModel — thử nhiều signature
+            boolean added = false;
+            for (Method m : modeledEntity.getClass().getMethods()) {
+                if (m.getName().equals("addModel")) {
+                    try {
+                        Class<?>[] params = m.getParameterTypes();
+                        if (params.length == 2) {
+                            m.invoke(modeledEntity, activeModel, true);
+                            added = true;
+                            plugin.debug("[TheMan] addModel OK");
+                            break;
+                        } else if (params.length == 1) {
+                            m.invoke(modeledEntity, activeModel);
+                            added = true;
+                            plugin.debug("[TheMan] addModel(1 param) OK");
+                            break;
+                        }
+                    } catch (Exception ex) {
+                        plugin.debug("[TheMan] addModel attempt failed: " + ex.getMessage());
+                    }
+                }
+            }
 
-            Method setVisible = modeledEntity.getClass().getMethod(
-                    "setBaseEntityVisible", boolean.class);
-            setVisible.invoke(modeledEntity, false);
+            if (!added) {
+                plugin.log("[TheMan] Không thể addModel!");
+                baseEntity.remove();
+                return false;
+            }
+
+            // setBaseEntityVisible — tắt base entity
+            for (Method m : modeledEntity.getClass().getMethods()) {
+                if (m.getName().contains("BaseEntity") && m.getName().contains("isible")) {
+                    try {
+                        m.invoke(modeledEntity, false);
+                        plugin.debug("[TheMan] setBaseEntityVisible OK: " + m.getName());
+                        break;
+                    } catch (Exception ignored) {}
+                }
+            }
 
             playAnimation("idle");
             this.currentPhase = phase;
             this.active = true;
+
             plugin.debug("[TheMan] Spawned " + phase + " → " + target.getName());
             return true;
 
@@ -80,6 +171,7 @@ public class TheMan {
             return false;
         } catch (Exception e) {
             plugin.log("[TheMan] Lỗi spawn: " + e.getMessage());
+            e.printStackTrace();
             if (baseEntity != null && !baseEntity.isDead()) baseEntity.remove();
             return false;
         }
@@ -90,8 +182,12 @@ public class TheMan {
         active = false;
         try {
             if (modeledEntity != null) {
-                Method destroy = modeledEntity.getClass().getMethod("destroy");
-                destroy.invoke(modeledEntity);
+                for (Method m : modeledEntity.getClass().getMethods()) {
+                    if (m.getName().equals("destroy") && m.getParameterCount() == 0) {
+                        m.invoke(modeledEntity);
+                        break;
+                    }
+                }
             }
         } catch (Exception ignored) {}
         if (baseEntity != null && !baseEntity.isDead()) baseEntity.remove();
@@ -183,10 +279,20 @@ public class TheMan {
         try {
             Method getHandler = activeModel.getClass().getMethod("getAnimationHandler");
             Object handler = getHandler.invoke(activeModel);
-            Method playAnim = handler.getClass().getMethod("playAnimation",
-                    String.class, double.class, double.class, double.class, boolean.class);
-            playAnim.invoke(handler, animName, 0.1, 0.1, 1.0, true);
-            currentAnim = animName;
+            for (Method m : handler.getClass().getMethods()) {
+                if (m.getName().equals("playAnimation")) {
+                    Class<?>[] params = m.getParameterTypes();
+                    try {
+                        if (params.length == 5) {
+                            m.invoke(handler, animName, 0.1, 0.1, 1.0, true);
+                        } else if (params.length == 1) {
+                            m.invoke(handler, animName);
+                        }
+                        currentAnim = animName;
+                        break;
+                    } catch (Exception ignored) {}
+                }
+            }
         } catch (Exception e) {
             plugin.debug("[TheMan] Animation error (" + animName + "): " + e.getMessage());
         }
