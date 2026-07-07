@@ -8,6 +8,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -55,8 +56,6 @@ public class TheManManager implements Listener {
         TheMan man = new TheMan(plugin, player);
         if (man.spawn(spawnLoc, phase)) {
             activeInstances.put(player.getUniqueId(), man);
-            plugin.debug("[TheManManager] Spawned for " + player.getName() +
-                    " phase=" + phase);
         }
     }
 
@@ -115,6 +114,19 @@ public class TheManManager implements Listener {
         }
     }
 
+    @EventHandler
+    public void onEntityDeath(EntityDeathEvent event) {
+        // Không cho The Man chết
+        for (TheMan man : activeInstances.values()) {
+            if (man.getBaseEntity() != null &&
+                man.getBaseEntity().equals(event.getEntity())) {
+                event.getDrops().clear();
+                event.setDroppedExp(0);
+                return;
+            }
+        }
+    }
+
     private Phase getPhaseFromSanity(double sanity) {
         if (sanity <= 5)  return Phase.PHASE_3;
         if (sanity <= 10) return Phase.PHASE_2;
@@ -136,9 +148,12 @@ public class TheManManager implements Listener {
         double dx = Math.cos(angle) * dist;
         double dz = Math.sin(angle) * dist;
 
-        Location spawnLoc = playerLoc.clone().add(dx, 0, dz);
-        spawnLoc.setY(spawnLoc.getWorld().getHighestBlockYAt(
-                spawnLoc.getBlockX(), spawnLoc.getBlockZ()));
+        // Spawn đúng trên mặt đất
+        Location spawnLoc = playerLoc.getWorld()
+                .getHighestBlockAt(
+                        (int)(playerLoc.getX() + dx),
+                        (int)(playerLoc.getZ() + dz))
+                .getLocation().add(0.5, 1, 0.5);
 
         if (!spawnLoc.getWorld().getWorldBorder().isInside(spawnLoc)) return null;
         return spawnLoc;
@@ -152,4 +167,4 @@ public class TheManManager implements Listener {
     public TheMan getInstance(Player player) {
         return activeInstances.get(player.getUniqueId());
     }
-          }
+}
