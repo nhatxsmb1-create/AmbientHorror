@@ -37,13 +37,12 @@ public class TheMan {
                 e.setInvulnerable(true);
                 e.setPersistent(false);
                 e.setCustomNameVisible(false);
-                e.setAI(false); // Tắt AI mặc định, mình tự điều khiển
+                e.setAI(true);  // Bật AI để pathfinder hoạt động
                 e.setBaby(false);
                 e.setRemoveWhenFarAway(false);
-                // Không drop item
                 e.setCanPickupItems(false);
-                // Tắt equipment
                 e.getEquipment().clear();
+                e.setTarget(null); // Không tự động attack
             });
 
             Class<?> apiClass = Class.forName("com.ticxo.modelengine.api.ModelEngineAPI");
@@ -200,6 +199,8 @@ public class TheMan {
     }
 
     private void tickPhase1() {
+        // Đứng yên — nếu nhìn vào thì biến mất
+        baseEntity.getPathfinder().stopPathfinding();
         if (isPlayerLookingAt()) {
             playAnimation("death");
             plugin.getServer().getScheduler().runTaskLater(plugin, this::despawn, 10L);
@@ -210,10 +211,13 @@ public class TheMan {
 
     private void tickPhase2() {
         if (isPlayerLookingAt()) {
+            // Nhìn vào → dừng lại
+            baseEntity.getPathfinder().stopPathfinding();
             if (!"idle".equals(currentAnim)) playAnimation("idle");
             return;
         }
-        moveToward(0.15);
+        // Không nhìn → di chuyển chậm
+        baseEntity.getPathfinder().moveTo(target, 0.6);
         if (!"walk".equals(currentAnim)) playAnimation("walk");
         if (getDistanceToPlayer() <= 3.0) onReachPlayer();
     }
@@ -221,32 +225,22 @@ public class TheMan {
     private void tickPhase3() {
         if (isPlayerLookingAt()) {
             // Nhìn vào → lao nhanh
-            moveToward(0.45);
+            baseEntity.getPathfinder().moveTo(target, 2.0);
         } else {
             // Không nhìn → đi chậm và rình
-            moveToward(0.08);
+            baseEntity.getPathfinder().moveTo(target, 0.4);
         }
         if (!"walk".equals(currentAnim)) playAnimation("walk");
         if (getDistanceToPlayer() <= 3.0) onReachPlayer();
     }
 
     private void onReachPlayer() {
+        baseEntity.getPathfinder().stopPathfinding();
         playAnimation("attack");
         plugin.getSanityManager().setSanity(target, 0);
         plugin.getSanityUI().onTierChange(target, 3);
         plugin.getServer().getScheduler().runTaskLater(plugin, this::despawn, 40L);
         plugin.debug("[TheMan] Reached → " + target.getName());
-    }
-
-    private void moveToward(double speed) {
-        if (baseEntity == null || baseEntity.isDead()) return;
-        Location myLoc = baseEntity.getLocation();
-        Vector dir = target.getLocation().toVector()
-                .subtract(myLoc.toVector());
-        dir.setY(0);
-        if (dir.lengthSquared() < 0.001) return;
-        dir.normalize().multiply(speed);
-        baseEntity.setVelocity(dir); // Dùng velocity thay vì teleport cho mượt hơn
     }
 
     private void facePlayer() {
