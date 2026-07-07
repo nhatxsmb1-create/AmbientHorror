@@ -40,20 +40,16 @@ public class TheMan {
                 e.setCustomNameVisible(false);
             });
 
-            // R4.0.9: dùng ModelEngineAPI.api() để lấy instance
             Class<?> apiClass = Class.forName("com.ticxo.modelengine.api.ModelEngineAPI");
 
-            // Lấy ModelEngine instance
             Object apiInstance = null;
             try {
                 Method getApi = apiClass.getMethod("api");
                 apiInstance = getApi.invoke(null);
             } catch (Exception e1) {
-                // Fallback: static method trực tiếp
                 plugin.debug("[TheMan] api() failed, trying static: " + e1.getMessage());
             }
 
-            // Tạo ModeledEntity
             if (apiInstance != null) {
                 try {
                     Method getEntityFactory = apiInstance.getClass()
@@ -67,7 +63,6 @@ public class TheMan {
                 }
             }
 
-            // Fallback về static method cũ nếu factory không work
             if (modeledEntity == null) {
                 try {
                     Method createModeledEntity = apiClass.getMethod(
@@ -84,12 +79,10 @@ public class TheMan {
                 return false;
             }
 
-            // Tạo ActiveModel
             try {
                 if (apiInstance != null) {
-                    Method getModelFactory = apiInstance.getClass()
-                            .getMethod("getModelRegistry");
-                    Object registry = getModelFactory.invoke(apiInstance);
+                    Method getModelRegistry = apiInstance.getClass().getMethod("getModelRegistry");
+                    Object registry = getModelRegistry.invoke(apiInstance);
                     Method getModel = registry.getClass().getMethod("getModel", String.class);
                     Object blueprint = getModel.invoke(registry, MODEL_ID);
                     if (blueprint != null) {
@@ -101,7 +94,6 @@ public class TheMan {
                 plugin.debug("[TheMan] registry getModel failed: " + e4.getMessage());
             }
 
-            // Fallback static createActiveModel
             if (activeModel == null) {
                 try {
                     Method createActiveModel = apiClass.getMethod(
@@ -118,7 +110,6 @@ public class TheMan {
                 return false;
             }
 
-            // addModel — thử nhiều signature
             boolean added = false;
             for (Method m : modeledEntity.getClass().getMethods()) {
                 if (m.getName().equals("addModel")) {
@@ -127,12 +118,10 @@ public class TheMan {
                         if (params.length == 2) {
                             m.invoke(modeledEntity, activeModel, true);
                             added = true;
-                            plugin.debug("[TheMan] addModel OK");
                             break;
                         } else if (params.length == 1) {
                             m.invoke(modeledEntity, activeModel);
                             added = true;
-                            plugin.debug("[TheMan] addModel(1 param) OK");
                             break;
                         }
                     } catch (Exception ex) {
@@ -147,12 +136,10 @@ public class TheMan {
                 return false;
             }
 
-            // setBaseEntityVisible — tắt base entity
             for (Method m : modeledEntity.getClass().getMethods()) {
                 if (m.getName().contains("BaseEntity") && m.getName().contains("isible")) {
                     try {
                         m.invoke(modeledEntity, false);
-                        plugin.debug("[TheMan] setBaseEntityVisible OK: " + m.getName());
                         break;
                     } catch (Exception ignored) {}
                 }
@@ -161,7 +148,6 @@ public class TheMan {
             playAnimation("idle");
             this.currentPhase = phase;
             this.active = true;
-
             plugin.debug("[TheMan] Spawned " + phase + " → " + target.getName());
             return true;
 
@@ -171,7 +157,6 @@ public class TheMan {
             return false;
         } catch (Exception e) {
             plugin.log("[TheMan] Lỗi spawn: " + e.getMessage());
-            e.printStackTrace();
             if (baseEntity != null && !baseEntity.isDead()) baseEntity.remove();
             return false;
         }
@@ -222,16 +207,22 @@ public class TheMan {
             if (!"idle".equals(currentAnim)) playAnimation("idle");
             return;
         }
-        moveToward(0.12);
+        moveToward(0.15);
         if (!"walk".equals(currentAnim)) playAnimation("walk");
         if (getDistanceToPlayer() <= 3.0) onReachPlayer();
     }
 
     private void tickPhase3() {
-        moveToward(0.22);
-        if (!"walk".equals(currentAnim)) playAnimation("walk");
-        if (getDistanceToPlayer() <= 3.0) onReachPlayer();
+    if (isPlayerLookingAt()) {
+        // Nhìn vào → lao nhanh
+        moveToward(0.45);
+    } else {
+        // Không nhìn → đi chậm và rình
+        moveToward(0.08);
     }
+    if (!"walk".equals(currentAnim)) playAnimation("walk");
+    if (getDistanceToPlayer() <= 3.0) onReachPlayer();
+}
 
     private void onReachPlayer() {
         playAnimation("attack");
@@ -245,10 +236,13 @@ public class TheMan {
         if (baseEntity == null || baseEntity.isDead()) return;
         Location myLoc = baseEntity.getLocation();
         Vector dir = target.getLocation().toVector()
-                .subtract(myLoc.toVector()).normalize().multiply(speed);
+                .subtract(myLoc.toVector());
+        dir.setY(0); // Không bay lên/xuống
+        if (dir.lengthSquared() < 0.001) return;
+        dir.normalize().multiply(speed);
         Location newLoc = myLoc.clone().add(dir);
         newLoc.setYaw(myLoc.getYaw());
-        newLoc.setPitch(myLoc.getPitch());
+        newLoc.setPitch(0);
         baseEntity.teleport(newLoc);
     }
 
@@ -259,6 +253,7 @@ public class TheMan {
         float yaw = (float) Math.toDegrees(Math.atan2(-dir.getX(), dir.getZ()));
         Location facing = myLoc.clone();
         facing.setYaw(yaw);
+        facing.setPitch(0);
         baseEntity.teleport(facing);
     }
 
@@ -266,7 +261,8 @@ public class TheMan {
         if (baseEntity == null) return false;
         Vector toMan = baseEntity.getLocation().toVector()
                 .subtract(target.getEyeLocation().toVector()).normalize();
-        return toMan.dot(target.getEyeLocation().getDirection().normalize()) > 0.85;
+        // 0.7 = khoảng 45 độ — dễ trigger hơn 0.85
+        return toMan.dot(target.getEyeLocation().getDirection().normalize()) > 0.7;
     }
 
     private double getDistanceToPlayer() {
@@ -281,8 +277,8 @@ public class TheMan {
             Object handler = getHandler.invoke(activeModel);
             for (Method m : handler.getClass().getMethods()) {
                 if (m.getName().equals("playAnimation")) {
-                    Class<?>[] params = m.getParameterTypes();
                     try {
+                        Class<?>[] params = m.getParameterTypes();
                         if (params.length == 5) {
                             m.invoke(handler, animName, 0.1, 0.1, 1.0, true);
                         } else if (params.length == 1) {
@@ -307,4 +303,4 @@ public class TheMan {
         this.currentPhase = phase;
         plugin.debug("[TheMan] Phase → " + phase + " for " + target.getName());
     }
-}
+                }
