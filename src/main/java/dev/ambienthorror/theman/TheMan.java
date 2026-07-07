@@ -2,9 +2,9 @@ package dev.ambienthorror.theman;
 
 import dev.ambienthorror.AmbientHorror;
 import org.bukkit.Location;
-import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Zombie;
 import org.bukkit.util.Vector;
 
 import java.lang.reflect.Method;
@@ -15,7 +15,7 @@ public class TheMan {
 
     private final AmbientHorror plugin;
     private final Player target;
-    private ArmorStand baseEntity;
+    private Zombie baseEntity;
     private Object modeledEntity;
     private Object activeModel;
     private Phase currentPhase;
@@ -31,13 +31,19 @@ public class TheMan {
 
     public boolean spawn(Location location, Phase phase) {
         try {
-            baseEntity = location.getWorld().spawn(location, ArmorStand.class, e -> {
+            baseEntity = location.getWorld().spawn(location, Zombie.class, e -> {
                 e.setInvisible(true);
                 e.setSilent(true);
-                e.setGravity(false);
                 e.setInvulnerable(true);
                 e.setPersistent(false);
                 e.setCustomNameVisible(false);
+                e.setAI(false); // Tắt AI mặc định, mình tự điều khiển
+                e.setBaby(false);
+                e.setRemoveWhenFarAway(false);
+                // Không drop item
+                e.setCanPickupItems(false);
+                // Tắt equipment
+                e.getEquipment().clear();
             });
 
             Class<?> apiClass = Class.forName("com.ticxo.modelengine.api.ModelEngineAPI");
@@ -47,7 +53,7 @@ public class TheMan {
                 Method getApi = apiClass.getMethod("api");
                 apiInstance = getApi.invoke(null);
             } catch (Exception e1) {
-                plugin.debug("[TheMan] api() failed, trying static: " + e1.getMessage());
+                plugin.debug("[TheMan] api() failed: " + e1.getMessage());
             }
 
             if (apiInstance != null) {
@@ -59,7 +65,7 @@ public class TheMan {
                             org.bukkit.entity.Entity.class);
                     modeledEntity = create.invoke(factory, baseEntity);
                 } catch (Exception e2) {
-                    plugin.debug("[TheMan] factory create failed: " + e2.getMessage());
+                    plugin.debug("[TheMan] factory failed: " + e2.getMessage());
                 }
             }
 
@@ -91,7 +97,7 @@ public class TheMan {
                     }
                 }
             } catch (Exception e4) {
-                plugin.debug("[TheMan] registry getModel failed: " + e4.getMessage());
+                plugin.debug("[TheMan] registry failed: " + e4.getMessage());
             }
 
             if (activeModel == null) {
@@ -125,7 +131,7 @@ public class TheMan {
                             break;
                         }
                     } catch (Exception ex) {
-                        plugin.debug("[TheMan] addModel attempt failed: " + ex.getMessage());
+                        plugin.debug("[TheMan] addModel failed: " + ex.getMessage());
                     }
                 }
             }
@@ -138,10 +144,8 @@ public class TheMan {
 
             for (Method m : modeledEntity.getClass().getMethods()) {
                 if (m.getName().contains("BaseEntity") && m.getName().contains("isible")) {
-                    try {
-                        m.invoke(modeledEntity, false);
-                        break;
-                    } catch (Exception ignored) {}
+                    try { m.invoke(modeledEntity, false); break; }
+                    catch (Exception ignored) {}
                 }
             }
 
@@ -185,11 +189,13 @@ public class TheMan {
             return;
         }
         if (!target.isOnline()) { despawn(); return; }
+
         switch (currentPhase) {
             case PHASE_1 -> tickPhase1();
             case PHASE_2 -> tickPhase2();
             case PHASE_3 -> tickPhase3();
         }
+
         facePlayer();
     }
 
@@ -213,16 +219,16 @@ public class TheMan {
     }
 
     private void tickPhase3() {
-    if (isPlayerLookingAt()) {
-        // Nhìn vào → lao nhanh
-        moveToward(0.45);
-    } else {
-        // Không nhìn → đi chậm và rình
-        moveToward(0.08);
+        if (isPlayerLookingAt()) {
+            // Nhìn vào → lao nhanh
+            moveToward(0.45);
+        } else {
+            // Không nhìn → đi chậm và rình
+            moveToward(0.08);
+        }
+        if (!"walk".equals(currentAnim)) playAnimation("walk");
+        if (getDistanceToPlayer() <= 3.0) onReachPlayer();
     }
-    if (!"walk".equals(currentAnim)) playAnimation("walk");
-    if (getDistanceToPlayer() <= 3.0) onReachPlayer();
-}
 
     private void onReachPlayer() {
         playAnimation("attack");
@@ -237,13 +243,10 @@ public class TheMan {
         Location myLoc = baseEntity.getLocation();
         Vector dir = target.getLocation().toVector()
                 .subtract(myLoc.toVector());
-        dir.setY(0); // Không bay lên/xuống
+        dir.setY(0);
         if (dir.lengthSquared() < 0.001) return;
         dir.normalize().multiply(speed);
-        Location newLoc = myLoc.clone().add(dir);
-        newLoc.setYaw(myLoc.getYaw());
-        newLoc.setPitch(0);
-        baseEntity.teleport(newLoc);
+        baseEntity.setVelocity(dir); // Dùng velocity thay vì teleport cho mượt hơn
     }
 
     private void facePlayer() {
@@ -261,7 +264,6 @@ public class TheMan {
         if (baseEntity == null) return false;
         Vector toMan = baseEntity.getLocation().toVector()
                 .subtract(target.getEyeLocation().toVector()).normalize();
-        // 0.7 = khoảng 45 độ — dễ trigger hơn 0.85
         return toMan.dot(target.getEyeLocation().getDirection().normalize()) > 0.7;
     }
 
@@ -303,4 +305,4 @@ public class TheMan {
         this.currentPhase = phase;
         plugin.debug("[TheMan] Phase → " + phase + " for " + target.getName());
     }
-                }
+}
