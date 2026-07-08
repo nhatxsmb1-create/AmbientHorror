@@ -5,9 +5,14 @@ import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Zombie;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 public class TheMan {
 
@@ -21,6 +26,10 @@ public class TheMan {
     private Phase currentPhase;
     private boolean active = false;
     private String currentAnim = "";
+    
+    // ✅ Track movement để escape stuck
+    private Location lastLocation;
+    private int stuckCounter = 0;
 
     private static final String MODEL_ID = "manfog";
 
@@ -54,6 +63,8 @@ public class TheMan {
                             .setBaseValue(1.0);  // Max knockback resistance
                 } catch (Exception ignored) {}
             });
+            
+            this.lastLocation = location.clone();
 
             Class<?> apiClass = Class.forName("com.ticxo.modelengine.api.ModelEngineAPI");
             Object apiInstance = null;
@@ -213,6 +224,8 @@ public class TheMan {
         }
 
         facePlayer();
+        checkStuck();  // ✅ Check nếu stuck
+        applyNearbyEffects();  // ✅ Apply effect khi gần
     }
 
     private void tickPhase1() {
@@ -236,7 +249,7 @@ public class TheMan {
         }
         
         // ✅ SMOOTH MOVEMENT - dùng velocity thay pathfinder
-        moveTowardPlayer(0.25);  // ← Speed 0.25 (chậm từ từ)
+        moveTowardPlayer(0.35);  // ← Speed 0.35 (chậm từ từ)
         if (!"walk".equals(currentAnim)) playAnimation("walk");
         
         if (getDistanceToPlayer() <= 3.0) onReachPlayer();
@@ -245,9 +258,9 @@ public class TheMan {
     private void tickPhase3() {
         // Phase 3: Lao vào nhanh
         if (isPlayerLookingAt()) {
-            moveTowardPlayer(0.6);  // ← Speed 0.6 (nhanh)
+            moveTowardPlayer(1.2);  // ← Speed 1.2 (rất nhanh, nhanh hơn player run)
         } else {
-            moveTowardPlayer(0.8);  // ← Speed 0.8 (rất nhanh)
+            moveTowardPlayer(1.5);  // ← Speed 1.5 (MAX nhanh)
         }
         
         if (!"walk".equals(currentAnim)) playAnimation("walk");
@@ -281,6 +294,67 @@ public class TheMan {
             baseEntity.setVelocity(direction);
         } else {
             baseEntity.setVelocity(new Vector(0, 0, 0));
+        }
+    }
+
+    /**
+     * ✅ CHECK STUCK - nếu bị kẹt block, teleport tiến
+     */
+    private void checkStuck() {
+        if (lastLocation == null || baseEntity == null) return;
+        
+        double distance = baseEntity.getLocation().distance(lastLocation);
+        
+        // Nếu di chuyển < 0.1 block trong tick
+        if (distance < 0.1) {
+            stuckCounter++;
+            if (stuckCounter >= 5) {  // ← Stuck 5 tick liên tiếp
+                // Teleport tiến 1 block về phía player
+                Location playerLoc = target.getLocation();
+                Vector direction = playerLoc.toVector()
+                        .subtract(baseEntity.getLocation().toVector())
+                        .normalize()
+                        .multiply(1.5);  // ← Teleport 1.5 block
+                
+                Location escapeLoc = baseEntity.getLocation().add(direction);
+                baseEntity.teleport(escapeLoc);
+                stuckCounter = 0;
+                plugin.debug("[TheMan] Escape stuck → " + target.getName());
+            }
+        } else {
+            stuckCounter = 0;
+        }
+        
+        lastLocation = baseEntity.getLocation().clone();
+    }
+
+    /**
+     * ✅ APPLY NEARBY EFFECTS - effect khi gần player
+     */
+    private void applyNearbyEffects() {
+        if (target == null || !target.isOnline()) return;
+        
+        double distance = getDistanceToPlayer();
+        
+        // < 5 block: BLINDNESS (chóng mặt)
+        if (distance <= 5.0) {
+            target.addPotionEffect(
+                    new PotionEffect(PotionEffectType.BLINDNESS, 20, 0, false, false),
+                    true
+            );
+        }
+        
+        // < 8 block: SLOWNESS (chậm)
+        if (distance <= 8.0) {
+            target.addPotionEffect(
+                    new PotionEffect(PotionEffectType.SLOWNESS, 20, 1, false, false),
+                    true
+            );
+        }
+        
+        // < 6 block: Play scary sound
+        if (distance <= 6.0 && Math.random() < 0.05) {  // ← 5% chance mỗi tick
+            plugin.getSoundManager().play(target, "breathing_close");
         }
     }
 
