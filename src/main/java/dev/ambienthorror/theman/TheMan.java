@@ -37,16 +37,17 @@ public class TheMan {
                 e.setInvulnerable(true);
                 e.setPersistent(false);
                 e.setCustomNameVisible(false);
-                e.setAI(true);  // Bật AI để pathfinder hoạt động
+                e.setAI(true);
                 e.setBaby(false);
                 e.setRemoveWhenFarAway(false);
                 e.setCanPickupItems(false);
                 e.getEquipment().clear();
-                e.setTarget(null); // Không tự động attack
+                e.setTarget(null);
+                // Không bị cháy nắng
+                e.setFireTicks(0);
             });
 
             Class<?> apiClass = Class.forName("com.ticxo.modelengine.api.ModelEngineAPI");
-
             Object apiInstance = null;
             try {
                 Method getApi = apiClass.getMethod("api");
@@ -189,6 +190,13 @@ public class TheMan {
         }
         if (!target.isOnline()) { despawn(); return; }
 
+        // Fix cháy nắng — reset mỗi tick
+        baseEntity.setFireTicks(0);
+        // Không bị đẩy bởi nước
+        if (baseEntity.isInWater()) {
+            baseEntity.setVelocity(new Vector(0, 0.1, 0));
+        }
+
         switch (currentPhase) {
             case PHASE_1 -> tickPhase1();
             case PHASE_2 -> tickPhase2();
@@ -199,7 +207,6 @@ public class TheMan {
     }
 
     private void tickPhase1() {
-        // Đứng yên — nếu nhìn vào thì biến mất
         baseEntity.getPathfinder().stopPathfinding();
         if (isPlayerLookingAt()) {
             playAnimation("death");
@@ -211,12 +218,10 @@ public class TheMan {
 
     private void tickPhase2() {
         if (isPlayerLookingAt()) {
-            // Nhìn vào → dừng lại
             baseEntity.getPathfinder().stopPathfinding();
             if (!"idle".equals(currentAnim)) playAnimation("idle");
             return;
         }
-        // Không nhìn → di chuyển chậm
         baseEntity.getPathfinder().moveTo(target, 0.6);
         if (!"walk".equals(currentAnim)) playAnimation("walk");
         if (getDistanceToPlayer() <= 3.0) onReachPlayer();
@@ -224,10 +229,8 @@ public class TheMan {
 
     private void tickPhase3() {
         if (isPlayerLookingAt()) {
-            // Nhìn vào → lao nhanh
             baseEntity.getPathfinder().moveTo(target, 2.0);
         } else {
-            // Không nhìn → đi chậm và rình
             baseEntity.getPathfinder().moveTo(target, 0.4);
         }
         if (!"walk".equals(currentAnim)) playAnimation("walk");
@@ -299,4 +302,4 @@ public class TheMan {
         this.currentPhase = phase;
         plugin.debug("[TheMan] Phase → " + phase + " for " + target.getName());
     }
-}
+            }
