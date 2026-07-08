@@ -3,6 +3,8 @@ package dev.ambienthorror.theman;
 import dev.ambienthorror.AmbientHorror;
 import dev.ambienthorror.theman.TheMan.Phase;
 import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -143,20 +145,72 @@ public class TheManManager implements Listener {
         }
 
         Location playerLoc = player.getLocation();
-        double angle = random.nextDouble() * 2 * Math.PI;
-        double dist = minDist + random.nextDouble() * (maxDist - minDist);
-        double dx = Math.cos(angle) * dist;
-        double dz = Math.sin(angle) * dist;
+        
+        // Thử spawn tối đa 10 lần để tìm location safe
+        for (int attempt = 0; attempt < 10; attempt++) {
+            double angle = random.nextDouble() * 2 * Math.PI;
+            double dist = minDist + random.nextDouble() * (maxDist - minDist);
+            double dx = Math.cos(angle) * dist;
+            double dz = Math.sin(angle) * dist;
 
-        // Spawn đúng trên mặt đất
-        Location spawnLoc = playerLoc.getWorld()
-                .getHighestBlockAt(
-                        (int)(playerLoc.getX() + dx),
-                        (int)(playerLoc.getZ() + dz))
-                .getLocation().add(0.5, 1, 0.5);
+            int spawnX = (int)(playerLoc.getX() + dx);
+            int spawnZ = (int)(playerLoc.getZ() + dz);
+            
+            // Check world border
+            if (!playerLoc.getWorld().getWorldBorder().isInside(
+                    new Location(playerLoc.getWorld(), spawnX, playerLoc.getY(), spawnZ))) {
+                continue;
+            }
 
-        if (!spawnLoc.getWorld().getWorldBorder().isInside(spawnLoc)) return null;
-        return spawnLoc;
+            // Spawn đúng trên mặt đất + check collision
+            Block highestBlock = playerLoc.getWorld().getHighestBlockAt(spawnX, spawnZ);
+            Location spawnLoc = highestBlock.getLocation().add(0.5, 1, 0.5);
+            
+            // Check xung quanh có block chắn không (3x3x2)
+            if (isSafeLocation(spawnLoc)) {
+                plugin.debug("[TheMan] Spawn location found (attempt " + (attempt + 1) + ") at " + 
+                    String.format("(%.0f, %.0f, %.0f)", spawnLoc.getX(), spawnLoc.getY(), spawnLoc.getZ()));
+                return spawnLoc;
+            }
+        }
+        
+        plugin.debug("[TheMan] Không tìm được safe spawn location sau 10 lần thử!");
+        return null;
+    }
+
+    /**
+     * Kiểm tra location có safe để spawn không (không bị kẹt block)
+     */
+    private boolean isSafeLocation(Location loc) {
+        Block center = loc.getBlock();
+        Block above = center.getRelative(0, 1, 0);
+        
+        // Center và block trên phải rỗng
+        if (!center.isEmpty() && !isPassable(center)) return false;
+        if (!above.isEmpty() && !isPassable(above)) return false;
+        
+        // Check 3x3 xung quanh - ít nhất không được solid
+        for (int x = -1; x <= 1; x++) {
+            for (int z = -1; z <= 1; z++) {
+                Block relative = center.getRelative(x, 0, z);
+                if (!relative.isEmpty() && !isPassable(relative)) {
+                    return false;
+                }
+            }
+        }
+        
+        return true;
+    }
+
+    /**
+     * Check block có passable không (air, liquid, tall grass, etc.)
+     */
+    private boolean isPassable(Block block) {
+        Material mat = block.getType();
+        if (mat == null || mat == Material.AIR) return true;
+        return mat.isTransparent() || mat == Material.WATER || mat == Material.LAVA || 
+               mat.name().contains("GRASS") || mat.name().contains("FLOWER") ||
+               mat.name().contains("CROP") || mat.name().contains("VINE");
     }
 
     public boolean isActive(Player player) {
