@@ -45,6 +45,8 @@ public class TheMan {
                 e.setTarget(null);
                 // Không bị cháy nắng
                 e.setFireTicks(0);
+                // Không collide với block
+                e.setCollidable(false);
             });
 
             Class<?> apiClass = Class.forName("com.ticxo.modelengine.api.ModelEngineAPI");
@@ -302,4 +304,4 @@ public class TheMan {
         this.currentPhase = phase;
         plugin.debug("[TheMan] Phase → " + phase + " for " + target.getName());
     }
-            }
+}
