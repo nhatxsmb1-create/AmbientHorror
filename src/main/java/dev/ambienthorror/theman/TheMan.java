@@ -231,10 +231,11 @@ public class TheMan {
             baseEntity.getPathfinder().moveTo(target, 0.4);
         }
 
-        // Fix lỗi Build: Sử dụng NAUSEA và SLOWNESS cho bản 1.21+
+        // --- ĐÃ THÊM: DARKNESS + NAUSEA + SLOWNESS ---
         if (distance <= 12.0) {
             target.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, 100, 0, true, false));
             target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 40, 1, true, false));
+            target.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 100, 0, true, false));
         }
 
         if (!"walk".equals(currentAnim)) playAnimation("walk");
@@ -295,4 +296,4 @@ public class TheMan {
         this.currentPhase = phase;
         plugin.debug("[TheMan] Phase → " + phase + " for " + target.getName());
     }
-                 }
+}
