@@ -212,14 +212,25 @@ public class TheMan {
     }
 
     private void tickPhase2() {
+        double distance = getDistanceToPlayer();
+
         if (isPlayerLookingAt()) {
             baseEntity.getPathfinder().stopPathfinding();
             if (!"idle".equals(currentAnim)) playAnimation("idle");
             return;
         }
+
+        // Thêm đoạn này: Tự động biến mất khi áp sát dưới 10 block
+        if (distance <= 10.0) {
+            despawn();
+            return;
+        }
+
         baseEntity.getPathfinder().moveTo(target, 0.6);
         if (!"walk".equals(currentAnim)) playAnimation("walk");
-        if (getDistanceToPlayer() <= 3.0) onReachPlayer();
+        
+        // Đoạn onReachPlayer cũ (distance <= 3.0) sẽ không còn chạy 
+        // vì nó đã despawn từ khoảng cách 10.0 rồi.
     }
 
     private void tickPhase3() {
