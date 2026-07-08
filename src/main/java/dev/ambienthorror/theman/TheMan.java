@@ -37,16 +37,22 @@ public class TheMan {
                 e.setInvulnerable(true);
                 e.setPersistent(false);
                 e.setCustomNameVisible(false);
-                e.setAI(true);
+                e.setAI(false);  // ← TẮT AI, mình control manual
                 e.setBaby(false);
                 e.setRemoveWhenFarAway(false);
                 e.setCanPickupItems(false);
                 e.getEquipment().clear();
                 e.setTarget(null);
-                // Không bị cháy nắng
+                
+                // ✅ Fix cháy nắng
                 e.setFireTicks(0);
-                // Không collide với block
-                e.setCollidable(false);
+                e.setCollidable(false);  // ← Không collide block
+                
+                // ✅ Prevent knockback để smooth movement
+                try {
+                    e.getAttribute(org.bukkit.attribute.Attribute.KNOCKBACK_RESISTANCE)
+                            .setBaseValue(1.0);  // Max knockback resistance
+                } catch (Exception ignored) {}
             });
 
             Class<?> apiClass = Class.forName("com.ticxo.modelengine.api.ModelEngineAPI");
@@ -192,9 +198,10 @@ public class TheMan {
         }
         if (!target.isOnline()) { despawn(); return; }
 
-        // Fix cháy nắng — reset mỗi tick
+        // ✅ Fix cháy nắng mỗi tick
         baseEntity.setFireTicks(0);
-        // Không bị đẩy bởi nước
+        
+        // ✅ Fix nước
         if (baseEntity.isInWater()) {
             baseEntity.setVelocity(new Vector(0, 0.1, 0));
         }
@@ -209,7 +216,9 @@ public class TheMan {
     }
 
     private void tickPhase1() {
-        baseEntity.getPathfinder().stopPathfinding();
+        // Phase 1: Đứng yên từ xa, chỉ nhìn player
+        baseEntity.setVelocity(new Vector(0, 0, 0));  // ← Dừng hẳn
+        
         if (isPlayerLookingAt()) {
             playAnimation("death");
             plugin.getServer().getScheduler().runTaskLater(plugin, this::despawn, 10L);
@@ -219,33 +228,60 @@ public class TheMan {
     }
 
     private void tickPhase2() {
+        // Phase 2: Theo chân từ từ
         if (isPlayerLookingAt()) {
-            baseEntity.getPathfinder().stopPathfinding();
+            baseEntity.setVelocity(new Vector(0, 0, 0));
             if (!"idle".equals(currentAnim)) playAnimation("idle");
             return;
         }
-        baseEntity.getPathfinder().moveTo(target, 0.6);
+        
+        // ✅ SMOOTH MOVEMENT - dùng velocity thay pathfinder
+        moveTowardPlayer(0.25);  // ← Speed 0.25 (chậm từ từ)
         if (!"walk".equals(currentAnim)) playAnimation("walk");
+        
         if (getDistanceToPlayer() <= 3.0) onReachPlayer();
     }
 
     private void tickPhase3() {
+        // Phase 3: Lao vào nhanh
         if (isPlayerLookingAt()) {
-            baseEntity.getPathfinder().moveTo(target, 2.0);
+            moveTowardPlayer(0.6);  // ← Speed 0.6 (nhanh)
         } else {
-            baseEntity.getPathfinder().moveTo(target, 0.4);
+            moveTowardPlayer(0.8);  // ← Speed 0.8 (rất nhanh)
         }
+        
         if (!"walk".equals(currentAnim)) playAnimation("walk");
         if (getDistanceToPlayer() <= 3.0) onReachPlayer();
     }
 
     private void onReachPlayer() {
-        baseEntity.getPathfinder().stopPathfinding();
+        baseEntity.setVelocity(new Vector(0, 0, 0));
         playAnimation("attack");
         plugin.getSanityManager().setSanity(target, 0);
         plugin.getSanityUI().onTierChange(target, 3);
         plugin.getServer().getScheduler().runTaskLater(plugin, this::despawn, 40L);
         plugin.debug("[TheMan] Reached → " + target.getName());
+    }
+
+    /**
+     * ✅ SMOOTH MOVEMENT - di chuyển mượt mà đến player
+     */
+    private void moveTowardPlayer(double speed) {
+        if (baseEntity == null || target == null) return;
+        
+        Location from = baseEntity.getLocation();
+        Location to = target.getLocation().clone();
+        
+        // Tính vector từ TheMan đến Player
+        Vector direction = to.toVector().subtract(from.toVector());
+        
+        // Normalize + scale theo speed
+        if (direction.length() > 0.1) {
+            direction = direction.normalize().multiply(speed);
+            baseEntity.setVelocity(direction);
+        } else {
+            baseEntity.setVelocity(new Vector(0, 0, 0));
+        }
     }
 
     private void facePlayer() {
