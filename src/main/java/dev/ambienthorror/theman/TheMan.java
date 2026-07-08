@@ -231,12 +231,10 @@ public class TheMan {
             baseEntity.getPathfinder().moveTo(target, 0.4);
         }
 
-        // Thêm hiệu ứng khi ở gần trong Phase 3
+        // Fix lỗi Build: Sử dụng NAUSEA và SLOWNESS cho bản 1.21+
         if (distance <= 12.0) {
-            // Hiệu ứng Buồn nôn (Nausea)
-            target.addPotionEffect(new PotionEffect(PotionEffectType.CONFUSION, 100, 0, true, false));
-            // Hiệu ứng Làm chậm II (Slowness)
-            target.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 40, 1, true, false));
+            target.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, 100, 0, true, false));
+            target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 40, 1, true, false));
         }
 
         if (!"walk".equals(currentAnim)) playAnimation("walk");
