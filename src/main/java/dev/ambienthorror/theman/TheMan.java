@@ -5,6 +5,8 @@ import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Zombie;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.lang.reflect.Method;
@@ -197,8 +199,6 @@ public class TheMan {
             case PHASE_2 -> tickPhase2();
             case PHASE_3 -> tickPhase3();
         }
-        // KHÔNG gọi facePlayer() bằng teleport
-        // ModelEngine tự xử lý rotation theo hướng di chuyển
     }
 
     private void tickPhase1() {
@@ -223,13 +223,24 @@ public class TheMan {
     }
 
     private void tickPhase3() {
+        double distance = getDistanceToPlayer();
+
         if (isPlayerLookingAt()) {
             baseEntity.getPathfinder().moveTo(target, 2.0);
         } else {
             baseEntity.getPathfinder().moveTo(target, 0.4);
         }
+
+        // Thêm hiệu ứng khi ở gần trong Phase 3
+        if (distance <= 12.0) {
+            // Hiệu ứng Buồn nôn (Nausea)
+            target.addPotionEffect(new PotionEffect(PotionEffectType.CONFUSION, 100, 0, true, false));
+            // Hiệu ứng Làm chậm II (Slowness)
+            target.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 40, 1, true, false));
+        }
+
         if (!"walk".equals(currentAnim)) playAnimation("walk");
-        if (getDistanceToPlayer() <= 3.0) onReachPlayer();
+        if (distance <= 3.0) onReachPlayer();
     }
 
     private void onReachPlayer() {
@@ -286,4 +297,4 @@ public class TheMan {
         this.currentPhase = phase;
         plugin.debug("[TheMan] Phase → " + phase + " for " + target.getName());
     }
-}
+                 }
